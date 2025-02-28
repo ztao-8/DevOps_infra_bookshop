@@ -23,7 +23,7 @@ jobs:
             --image-id ami-04b4f1a9cf54c11d0 \
             --instance-type t2.micro \
             --key-name book-key \
-            --security-group-ids sg-0bfd8a1b55262d59c \
+            --security-group-ids sg-03ca7c5be577e6761 \
             --query 'Instances[0].InstanceId' \
             --output text)
 
