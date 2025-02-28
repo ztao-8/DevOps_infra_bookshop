@@ -22,7 +22,7 @@ jobs:
             --region us-east-1 \
             --image-id ami-04b4f1a9cf54c11d0 \
             --instance-type t2.micro \
-            --key-name vockey \
+            --key-name book-key \
             --security-group-ids sg-03ca7c5be577e6761 \
             --query 'Instances[0].InstanceId' \
             --output text)
@@ -67,8 +67,8 @@ jobs:
 
       - name: set up SSH Key
         run: |
-          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > vockey.pem
-          chmod 400 vockey.pem
+          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > book-key.pem
+          chmod 400 book-key.pem
 
       - name: allow SSH
         run: |
@@ -81,7 +81,7 @@ jobs:
 
       - name: SSH connect EC2
         run: |
-          ssh -o StrictHostKeyChecking=no -i vockey.pem ec2-user@${{ env.TEMP_IP }} << EOF
+          ssh -o StrictHostKeyChecking=no -i book-key.pem ec2-user@${{ env.TEMP_IP }} << EOF
             echo "update system"
             sudo yum update -y
             echo "install Docker and Git..."
