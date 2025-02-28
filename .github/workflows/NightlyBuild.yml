@@ -22,7 +22,7 @@ jobs:
             --region us-east-1 \
             --image-id ami-014d544cfef21b42d \
             --instance-type t2.micro \
-            --key-name my-key \
+            --key-name vockey \
             --security-groups rds-access-sg \
             --query 'Instances[0].InstanceId' \
             --output text)
