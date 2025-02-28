@@ -67,7 +67,7 @@ jobs:
 
       - name: set up SSH Key
         run: |
-          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > book-key.pem
+          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}"| base64 --decode > book-key.pem
           chmod 400 book-key.pem
 
       - name: allow SSH
