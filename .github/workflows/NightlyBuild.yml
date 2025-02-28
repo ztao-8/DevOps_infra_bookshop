@@ -5,17 +5,17 @@ on:
     - cron: "0 2 * * *"  # 每天凌晨 2 点自动执行
   workflow_dispatch:  # 允许手动触发
 
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+
+
 jobs:
   setup-test-ec2:
     runs-on: ubuntu-latest
     steps:
-      - name: Configure AWS credentials
-        run: |
-          export AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
-          export AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          export AWS_SESSION_TOKEN=${{ secrets.AWS_SESSION_TOKEN }}
-          export AWS_REGION=${{ secrets.AWS_REGION }}
-
       - name: run temp EC2
         run: |
           TEMP_INSTANCE_ID=$(aws ec2 run-instances \
@@ -28,7 +28,7 @@ jobs:
             --output text)
 
           echo "TEMP_INSTANCE_ID=$TEMP_INSTANCE_ID" >> $GITHUB_ENV
-          aws ec2 wait instance-running --instance-ids $TEMP_INSTANCE_ID
+          aws ec2 wait instance-running --region $AWS_REGION --instance-ids $TEMP_INSTANCE_ID
 
           TEMP_IP=$(aws ec2 describe-instances \
             --instance-ids $TEMP_INSTANCE_ID \
