@@ -68,7 +68,7 @@ jobs:
       - name: set up SSH Key
         run: |
           echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}"| > book-key.pem
-          
+          chmod 600 book-key.pem
 
       - name: wait for EC2
         run: sleep 240
