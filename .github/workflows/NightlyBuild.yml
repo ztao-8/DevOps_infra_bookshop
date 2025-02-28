@@ -75,7 +75,7 @@ jobs:
 
       - name: SSH connect EC2
         run: |
-          ssh -i book-key.pem ubuntu@${{ env.TEMP_IP }} << EOF
+          ssh -o StrictHostKeyChecking=no -i book-key.pem ubuntu@${{ env.TEMP_IP }} << EOF
             echo "update system"
             sudo yum update -y
             echo "install Docker and Git..."
