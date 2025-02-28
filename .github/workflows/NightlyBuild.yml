@@ -48,6 +48,9 @@ jobs:
     needs: setup-test-ec2
     runs-on: ubuntu-latest
     steps:
+      - name: TEMP_IP
+        run:
+          echo "EC2 Public IP: ${{ env.TEMP_IP }}"
 
       - name: set up SSH Key
         run: |
@@ -65,7 +68,7 @@ jobs:
 
       - name: SSH connect EC2
         run: |
-          ssh -o StrictHostKeyChecking=no -i my-key.pem ec2-user@${{ env.TEMP_IP }} << 'EOF'
+          ssh -o StrictHostKeyChecking=no -i my-key.pem ec2-user@${{ env.TEMP_IP }} << EOF
             echo "update system"
             sudo yum update -y
             echo "install Docker and Git..."
