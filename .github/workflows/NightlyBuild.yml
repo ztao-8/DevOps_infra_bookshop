@@ -31,6 +31,7 @@ jobs:
           aws ec2 wait instance-running --region $AWS_REGION --instance-ids $TEMP_INSTANCE_ID
 
           TEMP_IP=$(aws ec2 describe-instances \
+            --region $AWS_REGION \
             --instance-ids $TEMP_INSTANCE_ID \
             --query 'Reservations[0].Instances[0].PublicIpAddress' \
             --output text)
