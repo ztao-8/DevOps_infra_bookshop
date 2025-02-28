@@ -16,7 +16,7 @@ jobs:
           export AWS_SESSION_TOKEN=${{ secrets.AWS_SESSION_TOKEN }}
           export AWS_REGION=${{ secrets.AWS_REGION }}
 
-      - name: 启动一个临时 EC2
+      - name: run temp EC2
         run: |
           TEMP_INSTANCE_ID=$(aws ec2 run-instances \
             --image-id ami-014d544cfef21b42d \
@@ -34,6 +34,21 @@ jobs:
             --query 'Reservations[0].Instances[0].PublicIpAddress' \
             --output text)
           echo "TEMP_IP=$TEMP_IP" >> $GITHUB_ENV
+
+  deploy-source-to-ec2:
+    needs: setup-test-ec2
+    runs-on: ubuntu-latest
+    steps:
+      - name: get Source Repo
+        run: |
+          ssh -o StrictHostKeyChecking=no -i my-key.pem ec2-user@${{ env.TEMP_IP }} << 'EOF'
+            sudo yum update -y
+            sudo yum install -y git docker
+            sudo service docker start
+            git clone https://github.com/ztao-8/DevOps_bookshop.git source-code
+            cd source-code
+            docker-compose up -d
+          EOF
 
   smoke-test:
     needs: setup-test-ec2
