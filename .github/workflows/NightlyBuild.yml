@@ -86,7 +86,7 @@ jobs:
             git clone https://github.com/ztao-8/DevOps_bookshop.git source-code
             cd source-code
             echo "Docker Compose..."
-            docker-compose up -d
+            docker compose up -d
           EOF
 
   smoke-test:
