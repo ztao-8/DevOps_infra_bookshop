@@ -36,6 +36,8 @@ jobs:
             --query 'Reservations[0].Instances[0].PublicIpAddress' \
             --output text)
           echo "TEMP_IP=$TEMP_IP" >> $GITHUB_ENV
+          echo "✅ EC2 Public IP: $TEMP_IP"
+          echo "TEMP_IP=$TEMP_IP" >> $GITHUB_ENV
 
   deploy-source-to-ec2:
     needs: setup-test-ec2
