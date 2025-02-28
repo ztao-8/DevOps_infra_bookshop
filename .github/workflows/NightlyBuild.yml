@@ -49,7 +49,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: TEMP_IP
-        run:
+        run: |
           echo "EC2 Public IP: ${{ env.TEMP_IP }}"
 
       - name: set up SSH Key
