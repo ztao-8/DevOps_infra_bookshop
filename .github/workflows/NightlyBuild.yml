@@ -62,7 +62,7 @@ jobs:
             sudo yum update -y
             echo "install Docker and Git..."
             sudo yum install -y git docker
-            echo “start Docker..."
+            echo "start Docker..."
             sudo service docker start
             echo "clone..."
             git clone https://github.com/ztao-8/DevOps_bookshop.git source-code
