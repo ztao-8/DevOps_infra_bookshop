@@ -23,7 +23,7 @@ jobs:
             --image-id ami-04b4f1a9cf54c11d0 \
             --instance-type t2.micro \
             --key-name vockey \
-            --security-group-ids sgr-08ad54a3edc1391fb \
+            --security-group-ids sg-03ca7c5be577e6761 \
             --query 'Instances[0].InstanceId' \
             --output text)
 
