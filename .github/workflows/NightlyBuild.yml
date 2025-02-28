@@ -19,6 +19,7 @@ jobs:
       - name: run temp EC2
         run: |
           TEMP_INSTANCE_ID=$(aws ec2 run-instances \
+            --region $AWS_REGION \
             --image-id ami-014d544cfef21b42d \
             --instance-type t2.micro \
             --key-name my-key \
