@@ -42,17 +42,28 @@ jobs:
           fi
           
           echo "✅ EC2 Public IP: $TEMP_IP"
-          echo "TEMP_IP=$TEMP_IP" >> $GITHUB_ENV
+          echo "$TEMP_IP" > temp_ip.txt
+
+      - name: 保存 TEMP_IP 变量到 artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ec2-ip
+          path: temp_ip.txt
 
   deploy-source-to-ec2:
     needs: setup-test-ec2
     runs-on: ubuntu-latest
     steps:
-      - name: TEMP_IP
+      - name: get TEMP_IP
+        uses: actions/download-artifact@v3
+        with:
+          name: ec2-ip
+
+      - name: 读取 TEMP_IP
         run: |
-          echo "reload TEMP_IP..."
-          echo "TEMP_IP=${{ env.TEMP_IP }}" >> $GITHUB_ENV
-          echo "read TEMP_IP: ${{ env.TEMP_IP }}"
+          TEMP_IP=$(cat temp_ip.txt)
+          echo "✅ 读取到 TEMP_IP: $TEMP_IP"
+          echo "TEMP_IP=$TEMP_IP" >> $GITHUB_ENV
 
       - name: set up SSH Key
         run: |
