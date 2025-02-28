@@ -67,7 +67,7 @@ jobs:
 
       - name: set up SSH Key
         run: |
-          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > my-key.pem
+          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > vockey.pem
           chmod 400 my-key.pem
 
       - name: allow SSH
@@ -81,7 +81,7 @@ jobs:
 
       - name: SSH connect EC2
         run: |
-          ssh -o StrictHostKeyChecking=no -i my-key.pem ec2-user@${{ env.TEMP_IP }} << EOF
+          ssh -o StrictHostKeyChecking=no -i vockey.pem ec2-user@${{ env.TEMP_IP }} << EOF
             echo "update system"
             sudo yum update -y
             echo "install Docker and Git..."
