@@ -48,9 +48,7 @@ jobs:
     needs: setup-test-ec2
     runs-on: ubuntu-latest
     steps:
-      - name: check `TEMP_IP`
-      - run: |
-          echo  EC2 Public IP: ${{ env.TEMP_IP }}"
+
       - name: set up SSH Key
         run: |
           echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > my-key.pem
