@@ -51,7 +51,7 @@ jobs:
           EOF
 
   smoke-test:
-    needs: setup-test-ec2
+    needs: deploy-source-to-ec2
     runs-on: ubuntu-latest
     steps:
       - name: 运行 Smoke Test
