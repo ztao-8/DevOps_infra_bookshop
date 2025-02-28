@@ -35,7 +35,12 @@ jobs:
             --instance-ids $TEMP_INSTANCE_ID \
             --query 'Reservations[0].Instances[0].PublicIpAddress' \
             --output text)
-          echo "TEMP_IP=$TEMP_IP" >> $GITHUB_ENV
+          
+          if [ -z "$TEMP_IP" ]; then
+            echo "❌ 获取 EC2 Public IP 失败，请检查 EC2 是否成功创建"
+            exit 1
+          fi
+          
           echo "✅ EC2 Public IP: $TEMP_IP"
           echo "TEMP_IP=$TEMP_IP" >> $GITHUB_ENV
 
@@ -43,6 +48,9 @@ jobs:
     needs: setup-test-ec2
     runs-on: ubuntu-latest
     steps:
+      - name: check `TEMP_IP`
+      - run: |
+          echo  EC2 Public IP: ${{ env.TEMP_IP }}"
       - name: set up SSH Key
         run: |
           echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > my-key.pem
