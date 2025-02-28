@@ -23,7 +23,7 @@ jobs:
             --image-id ami-04b4f1a9cf54c11d0 \
             --instance-type t2.micro \
             --key-name book-key \
-            --security-group-ids sg-03ca7c5be577e6761 \
+            --security-group-ids sg-0bfd8a1b55262d59c \
             --query 'Instances[0].InstanceId' \
             --output text)
 
@@ -75,7 +75,7 @@ jobs:
 
       - name: SSH connect EC2
         run: |
-          ssh -o StrictHostKeyChecking=no -i book-key.pem ec2-user@${{ env.TEMP_IP }} << EOF
+          ssh -o StrictHostKeyChecking=no -i book-key.pem ubuntu@${{ env.TEMP_IP }} << EOF
             echo "update system"
             sudo yum update -y
             echo "install Docker and Git..."
