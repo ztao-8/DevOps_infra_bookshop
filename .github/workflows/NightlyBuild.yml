@@ -20,7 +20,7 @@ jobs:
         run: |
           TEMP_INSTANCE_ID=$(aws ec2 run-instances \
             --region us-east-1 \
-            --image-id ami-014d544cfef21b42d \
+            --image-id ami-04b4f1a9cf54c11d0 \
             --instance-type t2.micro \
             --key-name vockey \
             --security-groups rds-access-sg \
