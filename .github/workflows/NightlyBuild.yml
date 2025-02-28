@@ -45,7 +45,7 @@ jobs:
           echo "$TEMP_IP" > temp_ip.txt
 
       - name: 保存 TEMP_IP 变量到 artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ec2-ip
           path: temp_ip.txt
