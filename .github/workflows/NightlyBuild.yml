@@ -75,7 +75,7 @@ jobs:
 
       - name: SSH connect EC2
         run: |
-          ssh -o StrictHostKeyChecking=no -i book-key.pem ubuntu@${{ env.TEMP_IP }} << EOF
+          ssh -i book-key.pem ubuntu@${{ env.TEMP_IP }} << EOF
             echo "update system"
             sudo yum update -y
             echo "install Docker and Git..."
@@ -93,7 +93,7 @@ jobs:
     needs: deploy-source-to-ec2
     runs-on: ubuntu-latest
     steps:
-      - name: 运行 Smoke Test
+      - name: run Smoke Test
         run: |
           chmod +x scripts/smoke-test.sh
           ./scripts/smoke-test.sh ${{ env.TEMP_IP }}
