@@ -67,14 +67,8 @@ jobs:
 
       - name: set up SSH Key
         run: |
-          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}"| base64 --decode > book-key.pem
-          chmod 400 book-key.pem
-
-      - name: allow SSH
-        run: |
-          aws ec2 authorize-security-group-ingress \
-            --group-id ${{ secrets.EC2_SECURITY_GROUP_ID }} \
-            --protocol tcp --port 22 --cidr 0.0.0.0/0 || true
+          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}"| > book-key.pem
+          
 
       - name: wait for EC2
         run: sleep 240
