@@ -77,7 +77,7 @@ jobs:
             --protocol tcp --port 22 --cidr 0.0.0.0/0 || true
 
       - name: wait for EC2
-        run: sleep 180
+        run: sleep 240
 
       - name: SSH connect EC2
         run: |
