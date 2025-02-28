@@ -77,16 +77,22 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no -i book-key.pem ubuntu@${{ env.TEMP_IP }} << EOF
             echo "update system"
-            sudo yum update -y
+            sudo apt update -y
+            sudo apt upgrade -y
+      
             echo "install Docker and Git..."
-            sudo yum install -y git docker
+            sudo apt install -y git docker.io docker-compose
+      
             echo "start Docker..."
-            sudo service docker start
-            echo "clone..."
+            sudo systemctl start docker
+            sudo systemctl enable docker
+      
+            echo "clone repository..."
             git clone https://github.com/ztao-8/DevOps_bookshop.git source-code
             cd source-code
+      
             echo "Docker Compose..."
-            docker compose up -d
+            sudo docker compose up -d
           EOF
 
   smoke-test:
