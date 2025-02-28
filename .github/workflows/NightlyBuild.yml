@@ -37,14 +37,14 @@ jobs:
             --output text)
           
           if [ -z "$TEMP_IP" ]; then
-            echo "❌ 获取 EC2 Public IP 失败，请检查 EC2 是否成功创建"
+            echo "❌ failed"
             exit 1
           fi
           
           echo "✅ EC2 Public IP: $TEMP_IP"
           echo "$TEMP_IP" > temp_ip.txt
 
-      - name: 保存 TEMP_IP 变量到 artifacts
+      - name: save TEMP_IP to artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ec2-ip
@@ -62,7 +62,7 @@ jobs:
       - name: 读取 TEMP_IP
         run: |
           TEMP_IP=$(cat temp_ip.txt)
-          echo "✅ 读取到 TEMP_IP: $TEMP_IP"
+          echo "✅ get TEMP_IP: $TEMP_IP"
           echo "TEMP_IP=$TEMP_IP" >> $GITHUB_ENV
 
       - name: set up SSH Key
