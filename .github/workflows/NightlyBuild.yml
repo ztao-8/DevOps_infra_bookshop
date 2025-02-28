@@ -50,7 +50,9 @@ jobs:
     steps:
       - name: TEMP_IP
         run: |
-          echo "EC2 Public IP: ${{ env.TEMP_IP }}"
+          echo "reload TEMP_IP..."
+          echo "TEMP_IP=${{ env.TEMP_IP }}" >> $GITHUB_ENV
+          echo "read TEMP_IP: ${{ env.TEMP_IP }}"
 
       - name: set up SSH Key
         run: |
