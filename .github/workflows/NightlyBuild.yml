@@ -58,28 +58,28 @@ jobs:
       - name: Login AWS ECR
         run: |
           aws ecr get-login-password --region $AWS_REGION | \
-          docker login --username AWS --password-stdin 123456789012.dkr.ecr.$AWS_REGION.amazonaws.com  
+          docker login --username AWS --password-stdin 509585101616.dkr.ecr.$AWS_REGION.amazonaws.com  
 
       - name: Build & Push Docker Image
         run: |
           docker build -t ${{ secrets.ECR_REPOSITORY }}:latest ./backend
-          docker tag ${{ secrets.ECR_REPOSITORY }}:latest 123456789012.dkr.ecr.$AWS_REGION.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest
-          docker push 123456789012.dkr.ecr.$AWS_REGION.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest
+          docker tag ${{ secrets.ECR_REPOSITORY }}:latest 509585101616.dkr.ecr.$AWS_REGION.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest
+          docker push 509585101616.dkr.ecr.$AWS_REGION.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest
 
-  deploy-to-qa:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    steps:
-      - name: 设置 SSH Key
-        run: |
-          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > my-key.pem
-          chmod 400 my-key.pem
-
-      - name: 部署到 QA 服务器
-        run: |
-          ssh -o StrictHostKeyChecking=no -i my-key.pem ec2-user@${{ secrets.QA_EC2_IP }} << 'EOF'  
-            docker pull 123456789012.dkr.ecr.$AWS_REGION.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest
-            docker stop backend_container || true
-            docker rm backend_container || true
-            docker run -d --name backend_container -p 8800:8800 123456789012.dkr.ecr.$AWS_REGION.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest
-          EOF
+#  deploy-to-qa:
+#    needs: build-and-push
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: 设置 SSH Key
+#        run: |
+#          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > my-key.pem
+#          chmod 400 my-key.pem
+#
+#      - name: 部署到 QA 服务器
+#        run: |
+#          ssh -o StrictHostKeyChecking=no -i my-key.pem ec2-user@${{ secrets.QA_EC2_IP }} << 'EOF'
+#            docker pull 509585101616.dkr.ecr.$AWS_REGION.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest
+#            docker stop backend_container || true
+#            docker rm backend_container || true
+#            docker run -d --name backend_container -p 8800:8800 509585101616.dkr.ecr.$AWS_REGION.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest
+#          EOF
