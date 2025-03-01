@@ -159,13 +159,32 @@ jobs:
         if: failure()
         run: |
           echo "❌ Smoke Test Failed! Removing ECR images..."
-          TIMESTAMP=$(grep TIMESTAMP $GITHUB_ENV | cut -d '=' -f2)
+          
+          # Fetch all tags from the backend repository
+          BACKEND_TAGS=$(aws ecr list-images --repository-name bookshop-backend --query 'imageIds[*].imageTag' --output text)
+          
+          # Fetch all tags from the frontend repository
+          FRONTEND_TAGS=$(aws ecr list-images --repository-name bookshop-frontend --query 'imageIds[*].imageTag' --output text)
 
-          aws ecr batch-delete-image --repository-name bookshop-backend --image-ids imageTag=latest
-          aws ecr batch-delete-image --repository-name bookshop-backend --image-ids imageTag=$TIMESTAMP
+          # Function to filter out "latest" and sort timestamps
+          get_latest_timestamp() {
+            echo "$1" | grep -E '^[0-9]{8}\.[0-9]{6}$' | sort -r | head -n 1
+          }
 
-          aws ecr batch-delete-image --repository-name bookshop-frontend --image-ids imageTag=latest
-          aws ecr batch-delete-image --repository-name bookshop-frontend --image-ids imageTag=$TIMESTAMP
+          # Get the most recent timestamped tags
+          LATEST_BACKEND_TAG=$(get_latest_timestamp "$BACKEND_TAGS")
+          LATEST_FRONTEND_TAG=$(get_latest_timestamp "$FRONTEND_TAGS")
+
+          echo "📌 Latest Backend Timestamp Tag: $LATEST_BACKEND_TAG"
+          echo "📌 Latest Frontend Timestamp Tag: $LATEST_FRONTEND_TAG"
+
+          # Remove latest and most recent timestamped backend images
+          aws ecr batch-delete-image --repository-name bookshop-backend --image-ids imageTag=latest || true
+          [ -n "$LATEST_BACKEND_TAG" ] && aws ecr batch-delete-image --repository-name bookshop-backend --image-ids imageTag=$LATEST_BACKEND_TAG || true
+
+          # Remove latest and most recent timestamped frontend images
+          aws ecr batch-delete-image --repository-name bookshop-frontend --image-ids imageTag=latest || true
+          [ -n "$LATEST_FRONTEND_TAG" ] && aws ecr batch-delete-image --repository-name bookshop-frontend --image-ids imageTag=$LATEST_FRONTEND_TAG || true
 
           echo "✅ Cleanup completed: Removed failed images from ECR."
 
