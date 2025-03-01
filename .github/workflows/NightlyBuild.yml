@@ -123,6 +123,13 @@ jobs:
       - name: Wait for EC2
         run: sleep 240
 
+      - name: Install AWS CLI in EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no -i book-key.pem ubuntu@${{ env.TEMP_IP }} << EOF
+            sudo apt update -y
+            sudo apt install -y awscli
+          EOF
+
       - name: Deploy Using Docker Compose
         run: |
           ssh -o StrictHostKeyChecking=no -i book-key.pem ubuntu@${{ env.TEMP_IP }} << EOF
@@ -137,6 +144,7 @@ jobs:
             echo "🐳 Logging in to AWS ECR..."
             aws ecr get-login-password --region $AWS_REGION | sudo docker login --username AWS --password-stdin $ECR_REGISTRY
 
+            
             echo "📂 Cloning Source Code Repo..."
             if [ ! -d "bookshop_source" ]; then
               git clone https://github.com/ztao-8/DevOps_bookshop.git bookshop_source
