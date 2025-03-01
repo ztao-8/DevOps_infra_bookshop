@@ -170,13 +170,16 @@ jobs:
               exit 1
             fi
 
-            echo "📝 Updating docker-compose.yml..."
-            sed -i 's|image: backend_service|image: $ECR_REGISTRY/$ECR_BACKEND:latest|' docker-compose.yml
-            sed -i 's|image: frontend_service|image: $ECR_REGISTRY/$ECR_FRONTEND:latest|' docker-compose.yml
+            echo "📝 Updating docker-compose-test.yml..."
+            export ECR_BACKEND_IMAGE="$ECR_REGISTRY/$ECR_BACKEND:latest"
+            export ECR_FRONTEND_IMAGE="$ECR_REGISTRY/$ECR_FRONTEND:latest"
+          
+            envsubst < docker-compose-test.yml > docker-compose-test.yml.tmp && mv docker-compose-test.yml.tmp docker-compose-test.yml
+            cat docker-compose-test.yml  # Debugging: Print the updated file
 
             echo "🚀 Running Docker Compose..."
-            sudo docker-compose down  # Stop old containers
-            sudo docker-compose up -d  # Start new containers
+            sudo docker-compose -f docker-compose-test.yml down  # Stop old containers
+            sudo docker-compose -f docker-compose-test.yml up -d 
           EOF
 
       - name: Copy Smoke Test Script to EC2
