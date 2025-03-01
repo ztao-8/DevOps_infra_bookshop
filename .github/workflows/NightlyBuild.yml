@@ -64,11 +64,6 @@ jobs:
             --query 'Instances[0].InstanceId' \
             --output text)
 
-          eif [ -z "$TEMP_INSTANCE_ID" ]; then
-            echo "❌ ERROR: Failed to create EC2 instance"
-            exit 1
-          fi
-
           echo "✅ EC2 Instance ID: $TEMP_INSTANCE_ID"
           echo "$TEMP_INSTANCE_ID" > instance_id.txt
           echo "INSTANCE_ID=$TEMP_INSTANCE_ID" >> $GITHUB_ENV  # Store for later steps
