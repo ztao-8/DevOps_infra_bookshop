@@ -99,6 +99,8 @@ jobs:
     needs: deploy-source-to-ec2
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository (fetch the source code)
+        uses: actions/checkout@v4
       - name: run Smoke Test
         run: |
           chmod +x scripts/smoke-test.sh
