@@ -2,7 +2,7 @@ name: Nightly Deployment
 
 on:
   schedule:
-    - cron: "0 2 * * *"  # 每天凌晨 2 点自动执行
+    - cron: "0 2 * * *"  # 每天凌晨 2 点执行
   workflow_dispatch:  # 允许手动触发
 
 env:
@@ -22,6 +22,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ztao-8/DevOps_bookshop
+          path: bookshop_source
 
       - name: Login to AWS ECR
         run: |
@@ -30,12 +31,23 @@ jobs:
 
       - name: Build and Push Docker Images using Docker Compose
         run: |
+          cd bookshop_source  # ✅ Navigate into the source repository directory
           docker compose build
-          docker tag backend_service:latest $ECR_REGISTRY/$ECR_BACKEND:latest
-          docker tag frontend_service:latest $ECR_REGISTRY/$ECR_FRONTEND:latest
+          TIMESTAMP=$(date "+%Y%m%d.%H%M%S")
+          echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_ENV
 
+          # Backend
+          docker tag bookshop_source-backend:latest $ECR_REGISTRY/$ECR_BACKEND:latest
+          docker tag bookshop_source-backend:latest $ECR_REGISTRY/$ECR_BACKEND:$TIMESTAMP
           docker push $ECR_REGISTRY/$ECR_BACKEND:latest
+          docker push $ECR_REGISTRY/$ECR_BACKEND:$TIMESTAMP
+
+          # Frontend
+          docker tag bookshop_source-frontend:latest $ECR_REGISTRY/$ECR_FRONTEND:latest
+          docker tag bookshop_source-frontend:latest $ECR_REGISTRY/$ECR_FRONTEND:$TIMESTAMP
           docker push $ECR_REGISTRY/$ECR_FRONTEND:latest
+          docker push $ECR_REGISTRY/$ECR_FRONTEND:$TIMESTAMP
+
 
   setup-test-ec2:
     needs: build-and-push
@@ -115,12 +127,19 @@ jobs:
             echo "🐳 Logging in to AWS ECR..."
             aws ecr get-login-password --region $AWS_REGION | sudo docker login --username AWS --password-stdin $ECR_REGISTRY
 
-            echo "📦 Pulling images from ECR..."
-            sudo docker pull $ECR_REGISTRY/$ECR_BACKEND:latest
-            sudo docker pull $ECR_REGISTRY/$ECR_FRONTEND:latest
-
             echo "📂 Cloning Source Code Repo..."
-            git clone https://github.com/ztao-8/DevOps_bookshop.git || (git pull)
+            if [ ! -d "bookshop_source" ]; then
+              git clone https://github.com/ztao-8/DevOps_bookshop.git bookshop_source
+            else
+              cd bookshop_source && git pull && cd ..
+            fi
+
+            cd bookshop_source || exit 1  # ✅ Ensure we are in the correct directory
+
+            if [ ! -f docker-compose.yml ]; then
+              echo "❌ docker-compose.yml not found! Exiting..."
+              exit 1
+            fi
 
             echo "📝 Updating docker-compose.yml..."
             sed -i 's|image: source-code_backend|image: $ECR_REGISTRY/$ECR_BACKEND:latest|' docker-compose.yml
@@ -147,5 +166,18 @@ jobs:
         if: failure()
         run: |
           echo "❌ Smoke Test Failed! Removing ECR images..."
+          # Get the timestamped image tag
+          TIMESTAMP=$(cat $GITHUB_ENV | grep TIMESTAMP | cut -d '=' -f2)
+
+          # Remove both latest and timestamped backend images
           aws ecr batch-delete-image --repository-name bookshop-backend --image-ids imageTag=latest
+          aws ecr batch-delete-image --repository-name bookshop-backend --image-ids imageTag=$TIMESTAMP
+
+          # Remove both latest and timestamped frontend images
           aws ecr batch-delete-image --repository-name bookshop-frontend --image-ids imageTag=latest
+          aws ecr batch-delete-image --repository-name bookshop-frontend --image-ids imageTag=$TIMESTAMP
+
+          echo "✅ Cleanup completed: Removed failed images from ECR."
+      - name: Terminate Temporary EC2 Instance
+        run: |
+          aws ec2 terminate-instances --instance-ids ${{ env.INSTANCE_ID }}
