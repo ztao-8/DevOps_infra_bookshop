@@ -32,7 +32,7 @@ jobs:
       - name: Build and Push Docker Images using Docker Compose
         run: |
           cd bookshop_source
-          docker-compose build
+          docker compose build
           docker tag bookshop_source_backend:latest $ECR_REGISTRY/$ECR_BACKEND:latest
           docker tag bookshop_source_frontend:latest $ECR_REGISTRY/$ECR_FRONTEND:latest
 
