@@ -22,7 +22,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ztao-8/DevOps_bookshop
-          path: bookshop_source
 
       - name: Login to AWS ECR
         run: |
@@ -31,10 +30,9 @@ jobs:
 
       - name: Build and Push Docker Images using Docker Compose
         run: |
-          cd bookshop_source
           docker compose build
-          docker tag bookshop_source_backend:latest $ECR_REGISTRY/$ECR_BACKEND:latest
-          docker tag bookshop_source_frontend:latest $ECR_REGISTRY/$ECR_FRONTEND:latest
+          docker tag backend_service:latest $ECR_REGISTRY/$ECR_BACKEND:latest
+          docker tag frontend_service:latest $ECR_REGISTRY/$ECR_FRONTEND:latest
 
           docker push $ECR_REGISTRY/$ECR_BACKEND:latest
           docker push $ECR_REGISTRY/$ECR_FRONTEND:latest
@@ -122,10 +120,9 @@ jobs:
             sudo docker pull $ECR_REGISTRY/$ECR_FRONTEND:latest
 
             echo "📂 Cloning Source Code Repo..."
-            git clone https://github.com/ztao-8/DevOps_bookshop.git bookshop_source || (cd bookshop_source && git pull)
+            git clone https://github.com/ztao-8/DevOps_bookshop.git || (git pull)
 
             echo "📝 Updating docker-compose.yml..."
-            cd bookshop_source
             sed -i 's|image: source-code_backend|image: $ECR_REGISTRY/$ECR_BACKEND:latest|' docker-compose.yml
             sed -i 's|image: source-code_frontend|image: $ECR_REGISTRY/$ECR_FRONTEND:latest|' docker-compose.yml
 
