@@ -249,6 +249,10 @@ jobs:
 
           [ -n "$LATEST_BACKEND_TAG" ] && aws ecr batch-delete-image --repository-name bookshop-backend --image-ids imageTag=$LATEST_BACKEND_TAG || true
           [ -n "$LATEST_FRONTEND_TAG" ] && aws ecr batch-delete-image --repository-name bookshop-frontend --image-ids imageTag=$LATEST_FRONTEND_TAG || true
+          
+          echo "Removing latest tag images..."
+          aws ecr batch-delete-image --repository-name bookshop-backend --image-ids imageTag=latest || true
+          aws ecr batch-delete-image --repository-name bookshop-frontend --image-ids imageTag=latest || true
 
           echo "✅ Cleanup completed."
 
