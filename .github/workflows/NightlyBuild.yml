@@ -101,6 +101,10 @@ jobs:
     steps:
       - name: Checkout repository (fetch the source code)
         uses: actions/checkout@v4
+      - name: Debug TEMP_IP
+        run: |
+          echo "TEMP_IP from environment: ${{ env.TEMP_IP }}"
+          echo "TEMP_IP from variable: $TEMP_IP"
       - name: run Smoke Test
         run: |
           chmod +x scripts/smoke-test.sh
