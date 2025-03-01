@@ -31,7 +31,7 @@ jobs:
 
       - name: Build and Push Docker Images using Docker Compose
         run: |
-          cd bookshop_source
+          cd bookshop_source  # ✅ Navigate into the source repository directory
           docker compose build
           TIMESTAMP=$(date "+%Y%m%d.%H%M%S")
           echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_ENV
@@ -48,6 +48,7 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_FRONTEND:latest
           docker push $ECR_REGISTRY/$ECR_FRONTEND:$TIMESTAMP
 
+
   setup-test-ec2:
     needs: build-and-push
     runs-on: ubuntu-latest
@@ -63,14 +64,14 @@ jobs:
             --query 'Instances[0].InstanceId' \
             --output text)
 
-          if [ -z "$TEMP_INSTANCE_ID" ]; then
+          eif [ -z "$TEMP_INSTANCE_ID" ]; then
             echo "❌ ERROR: Failed to create EC2 instance"
             exit 1
           fi
 
           echo "✅ EC2 Instance ID: $TEMP_INSTANCE_ID"
           echo "$TEMP_INSTANCE_ID" > instance_id.txt
-          echo "INSTANCE_ID=$TEMP_INSTANCE_ID" >> $GITHUB_ENV
+          echo "INSTANCE_ID=$TEMP_INSTANCE_ID" >> $GITHUB_ENV  # Store for later steps
 
           aws ec2 wait instance-running --region $AWS_REGION --instance-ids $TEMP_INSTANCE_ID
 
@@ -81,10 +82,10 @@ jobs:
             --output text)
 
           if [ -z "$TEMP_IP" ]; then
-            echo "❌ ERROR: Failed to retrieve EC2 Public IP"
+            echo "❌ EC2 failed to start"
             exit 1
           fi
-
+          
           echo "✅ EC2 Public IP: $TEMP_IP"
           echo "$TEMP_IP" > temp_ip.txt
 
@@ -99,6 +100,7 @@ jobs:
         with:
           name: ec2-instance-id
           path: instance_id.txt
+
 
   deploy-source-to-ec2:
     needs: setup-test-ec2
@@ -129,18 +131,38 @@ jobs:
       - name: Deploy Using Docker Compose
         run: |
           ssh -o StrictHostKeyChecking=no -i book-key.pem ubuntu@${{ env.TEMP_IP }} << EOF
+            echo "🔄 Updating system..."
             sudo apt update -y && sudo apt upgrade -y
+
+            echo "🔧 Installing Docker..."
             sudo apt install -y git docker.io docker-compose
             sudo systemctl start docker
             sudo systemctl enable docker
 
+            echo "🐳 Logging in to AWS ECR..."
             aws ecr get-login-password --region $AWS_REGION | sudo docker login --username AWS --password-stdin $ECR_REGISTRY
 
-            sudo docker pull $ECR_REGISTRY/$ECR_BACKEND:latest
-            sudo docker pull $ECR_REGISTRY/$ECR_FRONTEND:latest
+            echo "📂 Cloning Source Code Repo..."
+            if [ ! -d "bookshop_source" ]; then
+              git clone https://github.com/ztao-8/DevOps_bookshop.git bookshop_source
+            else
+              cd bookshop_source && git pull && cd ..
+            fi
 
-            sudo docker-compose down
-            sudo docker-compose up -d
+            cd bookshop_source || exit 1  # ✅ Ensure we are in the correct directory
+
+            if [ ! -f docker-compose.yml ]; then
+              echo "❌ docker-compose.yml not found! Exiting..."
+              exit 1
+            fi
+
+            echo "📝 Updating docker-compose.yml..."
+            sed -i 's|image: source-code_backend|image: $ECR_REGISTRY/$ECR_BACKEND:latest|' docker-compose.yml
+            sed -i 's|image: source-code_frontend|image: $ECR_REGISTRY/$ECR_FRONTEND:latest|' docker-compose.yml
+
+            echo "🚀 Running Docker Compose..."
+            sudo docker-compose down  # Stop old containers
+            sudo docker-compose up -d  # Start new containers
           EOF
 
       - name: Copy Smoke Test Script to EC2
@@ -159,34 +181,16 @@ jobs:
         if: failure()
         run: |
           echo "❌ Smoke Test Failed! Removing ECR images..."
-          
-          # Fetch all tags from the backend repository
-          BACKEND_TAGS=$(aws ecr list-images --repository-name bookshop-backend --query 'imageIds[*].imageTag' --output text)
-          
-          # Fetch all tags from the frontend repository
-          FRONTEND_TAGS=$(aws ecr list-images --repository-name bookshop-frontend --query 'imageIds[*].imageTag' --output text)
+          BACKEND_TAGS=$(aws ecr list-images --repository-name bookshop-backend --query 'imageIds[*].imageTag' --output text | grep -E '^[0-9]{8}\.[0-9]{6}$' | sort -r)
+          FRONTEND_TAGS=$(aws ecr list-images --repository-name bookshop-frontend --query 'imageIds[*].imageTag' --output text | grep -E '^[0-9]{8}\.[0-9]{6}$' | sort -r)
 
-          # Function to filter out "latest" and sort timestamps
-          get_latest_timestamp() {
-            echo "$1" | grep -E '^[0-9]{8}\.[0-9]{6}$' | sort -r | head -n 1
-          }
+          LATEST_BACKEND_TAG=$(echo "$BACKEND_TAGS" | head -n 1)
+          LATEST_FRONTEND_TAG=$(echo "$FRONTEND_TAGS" | head -n 1)
 
-          # Get the most recent timestamped tags
-          LATEST_BACKEND_TAG=$(get_latest_timestamp "$BACKEND_TAGS")
-          LATEST_FRONTEND_TAG=$(get_latest_timestamp "$FRONTEND_TAGS")
-
-          echo "📌 Latest Backend Timestamp Tag: $LATEST_BACKEND_TAG"
-          echo "📌 Latest Frontend Timestamp Tag: $LATEST_FRONTEND_TAG"
-
-          # Remove latest and most recent timestamped backend images
-          aws ecr batch-delete-image --repository-name bookshop-backend --image-ids imageTag=latest || true
           [ -n "$LATEST_BACKEND_TAG" ] && aws ecr batch-delete-image --repository-name bookshop-backend --image-ids imageTag=$LATEST_BACKEND_TAG || true
-
-          # Remove latest and most recent timestamped frontend images
-          aws ecr batch-delete-image --repository-name bookshop-frontend --image-ids imageTag=latest || true
           [ -n "$LATEST_FRONTEND_TAG" ] && aws ecr batch-delete-image --repository-name bookshop-frontend --image-ids imageTag=$LATEST_FRONTEND_TAG || true
 
-          echo "✅ Cleanup completed: Removed failed images from ECR."
+          echo "✅ Cleanup completed."
 
       - name: Get INSTANCE_ID
         uses: actions/download-artifact@v4
@@ -196,8 +200,13 @@ jobs:
       - name: Read INSTANCE_ID
         run: |
           INSTANCE_ID=$(cat instance_id.txt)
+          if [ -z "$INSTANCE_ID" ]; then
+            echo "❌ ERROR: INSTANCE_ID is empty. Exiting..."
+            exit 1
+          fi
           echo "✅ INSTANCE_ID: $INSTANCE_ID"
           echo "INSTANCE_ID=$INSTANCE_ID" >> $GITHUB_ENV
+
 
       - name: Terminate Temporary EC2 Instance
         run: |
