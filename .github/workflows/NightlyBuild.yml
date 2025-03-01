@@ -160,8 +160,8 @@ jobs:
             fi
 
             echo "📝 Updating docker-compose.yml..."
-            sed -i 's|image: source-code_backend|image: $ECR_REGISTRY/$ECR_BACKEND:latest|' docker-compose.yml
-            sed -i 's|image: source-code_frontend|image: $ECR_REGISTRY/$ECR_FRONTEND:latest|' docker-compose.yml
+            sed -i 's|image: backend_service|image: $ECR_REGISTRY/$ECR_BACKEND:latest|' docker-compose.yml
+            sed -i 's|image: frontend_service|image: $ECR_REGISTRY/$ECR_FRONTEND:latest|' docker-compose.yml
 
             echo "🚀 Running Docker Compose..."
             sudo docker-compose down  # Stop old containers
