@@ -1,6 +1,7 @@
 #!/bin/bash
 
 API_URL="http://localhost:8800"
+FRONTEND_URL="http://localhost:3000"
 
 echo "🚀 Running Smoke Test for API: $API_URL"
 
