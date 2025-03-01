@@ -31,7 +31,7 @@ jobs:
 
       - name: Build and Push Docker Images using Docker Compose
         run: |
-          cd bookshop_source  # ✅ Navigate into the source repository directory
+          cd bookshop_source
           docker compose build
           TIMESTAMP=$(date "+%Y%m%d.%H%M%S")
           echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_ENV
@@ -48,7 +48,6 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_FRONTEND:latest
           docker push $ECR_REGISTRY/$ECR_FRONTEND:$TIMESTAMP
 
-
   setup-test-ec2:
     needs: build-and-push
     runs-on: ubuntu-latest
@@ -64,8 +63,15 @@ jobs:
             --query 'Instances[0].InstanceId' \
             --output text)
 
-          echo "TEMP_INSTANCE_ID=$TEMP_INSTANCE_ID" >> $GITHUB_ENV
-          echo "${{ env.TEMP_INSTANCE_ID }}" > instance_id.txt
+          if [ -z "$TEMP_INSTANCE_ID" ]; then
+            echo "❌ ERROR: Failed to create EC2 instance"
+            exit 1
+          fi
+
+          echo "✅ EC2 Instance ID: $TEMP_INSTANCE_ID"
+          echo "$TEMP_INSTANCE_ID" > instance_id.txt
+          echo "INSTANCE_ID=$TEMP_INSTANCE_ID" >> $GITHUB_ENV
+
           aws ec2 wait instance-running --region $AWS_REGION --instance-ids $TEMP_INSTANCE_ID
 
           TEMP_IP=$(aws ec2 describe-instances \
@@ -75,10 +81,10 @@ jobs:
             --output text)
 
           if [ -z "$TEMP_IP" ]; then
-            echo "❌ EC2 failed to start"
+            echo "❌ ERROR: Failed to retrieve EC2 Public IP"
             exit 1
           fi
-          
+
           echo "✅ EC2 Public IP: $TEMP_IP"
           echo "$TEMP_IP" > temp_ip.txt
 
@@ -93,7 +99,6 @@ jobs:
         with:
           name: ec2-instance-id
           path: instance_id.txt
-
 
   deploy-source-to-ec2:
     needs: setup-test-ec2
@@ -124,38 +129,18 @@ jobs:
       - name: Deploy Using Docker Compose
         run: |
           ssh -o StrictHostKeyChecking=no -i book-key.pem ubuntu@${{ env.TEMP_IP }} << EOF
-            echo "🔄 Updating system..."
             sudo apt update -y && sudo apt upgrade -y
-
-            echo "🔧 Installing Docker..."
             sudo apt install -y git docker.io docker-compose
             sudo systemctl start docker
             sudo systemctl enable docker
 
-            echo "🐳 Logging in to AWS ECR..."
             aws ecr get-login-password --region $AWS_REGION | sudo docker login --username AWS --password-stdin $ECR_REGISTRY
 
-            echo "📂 Cloning Source Code Repo..."
-            if [ ! -d "bookshop_source" ]; then
-              git clone https://github.com/ztao-8/DevOps_bookshop.git bookshop_source
-            else
-              cd bookshop_source && git pull && cd ..
-            fi
+            sudo docker pull $ECR_REGISTRY/$ECR_BACKEND:latest
+            sudo docker pull $ECR_REGISTRY/$ECR_FRONTEND:latest
 
-            cd bookshop_source || exit 1  # ✅ Ensure we are in the correct directory
-
-            if [ ! -f docker-compose.yml ]; then
-              echo "❌ docker-compose.yml not found! Exiting..."
-              exit 1
-            fi
-
-            echo "📝 Updating docker-compose.yml..."
-            sed -i 's|image: source-code_backend|image: $ECR_REGISTRY/$ECR_BACKEND:latest|' docker-compose.yml
-            sed -i 's|image: source-code_frontend|image: $ECR_REGISTRY/$ECR_FRONTEND:latest|' docker-compose.yml
-
-            echo "🚀 Running Docker Compose..."
-            sudo docker-compose down  # Stop old containers
-            sudo docker-compose up -d  # Start new containers
+            sudo docker-compose down
+            sudo docker-compose up -d
           EOF
 
       - name: Copy Smoke Test Script to EC2
@@ -174,18 +159,16 @@ jobs:
         if: failure()
         run: |
           echo "❌ Smoke Test Failed! Removing ECR images..."
-          # Get the timestamped image tag
-          TIMESTAMP=$(cat $GITHUB_ENV | grep TIMESTAMP | cut -d '=' -f2)
+          TIMESTAMP=$(grep TIMESTAMP $GITHUB_ENV | cut -d '=' -f2)
 
-          # Remove both latest and timestamped backend images
           aws ecr batch-delete-image --repository-name bookshop-backend --image-ids imageTag=latest
           aws ecr batch-delete-image --repository-name bookshop-backend --image-ids imageTag=$TIMESTAMP
 
-          # Remove both latest and timestamped frontend images
           aws ecr batch-delete-image --repository-name bookshop-frontend --image-ids imageTag=latest
           aws ecr batch-delete-image --repository-name bookshop-frontend --image-ids imageTag=$TIMESTAMP
 
           echo "✅ Cleanup completed: Removed failed images from ECR."
+
       - name: Get INSTANCE_ID
         uses: actions/download-artifact@v4
         with:
@@ -204,6 +187,5 @@ jobs:
             echo "❌ ERROR: No instance ID found. Skipping termination."
             exit 1
           fi
-          echo "Terminating EC2 instance: $INSTANCE_ID"
+          echo "🔄 Terminating EC2 instance: $INSTANCE_ID"
           aws ec2 terminate-instances --instance-ids $INSTANCE_ID
-      
