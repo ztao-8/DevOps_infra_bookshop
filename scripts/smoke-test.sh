@@ -1,7 +1,6 @@
 #!/bin/bash
 
-EC2_IP=$1  # 获取传入的 IP 参数
-API_URL="http://$EC2_IP:8800"
+API_URL="http://localhost:8800"
 
 echo "🚀 Running Smoke Test for API: $API_URL"
 
