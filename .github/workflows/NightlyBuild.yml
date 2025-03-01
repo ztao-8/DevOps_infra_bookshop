@@ -105,6 +105,7 @@ jobs:
       - name: Run Smoke Test on EC2
         run: |
           ssh -o StrictHostKeyChecking=no -i book-key.pem ubuntu@${{ env.TEMP_IP }} << EOF
+            sleep 20
             chmod +x /home/ubuntu/smoke-test.sh
             /home/ubuntu/smoke-test.sh localhost
           EOF
