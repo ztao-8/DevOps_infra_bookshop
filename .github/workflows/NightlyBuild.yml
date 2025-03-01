@@ -101,6 +101,11 @@ jobs:
     steps:
       - name: Checkout repository (fetch the source code)
         uses: actions/checkout@v4
+
+      - name: get TEMP_IP
+        uses: actions/download-artifact@v4
+        with:
+          name: ec2-ip
       - name: read TEMP_IP
         run: |
           TEMP_IP=$(cat temp_ip.txt)
