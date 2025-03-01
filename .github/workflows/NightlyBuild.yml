@@ -95,29 +95,19 @@ jobs:
             sudo docker-compose up -d
           EOF
 
-  smoke-test:
-    needs: deploy-source-to-ec2
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository (fetch the source code)
-        uses: actions/checkout@v4
+      - name: Copy Smoke Test Script to EC2
+        run: |
+          scp -o StrictHostKeyChecking=no -i book-key.pem scripts/smoke-test.sh ubuntu@${{ env.TEMP_IP }}:/home/ubuntu/smoke-test.sh
 
-      - name: get TEMP_IP
-        uses: actions/download-artifact@v4
-        with:
-          name: ec2-ip
-      - name: read TEMP_IP
+      - name: Run Smoke Test on EC2
         run: |
-          TEMP_IP=$(cat temp_ip.txt)
-          echo "✅ get TEMP_IP: $TEMP_IP"
-          echo "TEMP_IP=$TEMP_IP" >> $GITHUB_ENV
-      - name: run Smoke Test
-        run: |
-          chmod +x scripts/smoke-test.sh
-          ./scripts/smoke-test.sh ${{ env.TEMP_IP }}
+          ssh -o StrictHostKeyChecking=no -i book-key.pem ubuntu@${{ env.TEMP_IP }} << EOF
+            chmod +x /home/ubuntu/smoke-test.sh
+            /home/ubuntu/smoke-test.sh localhost
+          EOF
 
   build-and-push:
-    needs: smoke-test
+    needs: deploy-source-to-ec2
     runs-on: ubuntu-latest
     steps:
       - name: Configure AWS credentials
