@@ -13,6 +13,7 @@ env:
   ECR_BACKEND: "bookshop-backend"
   ECR_FRONTEND: "bookshop-frontend"
   ECR_REGISTRY: "509585101616.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com"
+  QA_EC2_IP: ${{ secrets.QA_EC2_IP}}
 
 jobs:
   build-and-push:
@@ -172,8 +173,8 @@ jobs:
             fi
 
             echo "📝 Updating docker-compose-test.yml..."
-            export ECR_BACKEND_IMAGE="$ECR_REGISTRY/$ECR_BACKEND:latest"
-            export ECR_FRONTEND_IMAGE="$ECR_REGISTRY/$ECR_FRONTEND:latest"
+            export ECR_BACKEND_IMAGE="$ECR_REGISTRY/bookshop-backend:latest"
+            export ECR_FRONTEND_IMAGE="$ECR_REGISTRY/bookshop-frontend:latest"
           
             envsubst < docker-compose-test.yml > docker-compose-test.yml.tmp && mv docker-compose-test.yml.tmp docker-compose-test.yml
             cat docker-compose-test.yml  # Debugging: Print the updated file
@@ -195,6 +196,47 @@ jobs:
             /home/ubuntu/smoke-test.sh localhost
           EOF
 
+      - name: Deploy to QA EC2
+        if: success()
+        run: |
+          echo "Smoke test succeeded. Deploying latest images to QA..."
+          ssh -i book-key.pem -o StrictHostKeyChecking=no ubuntu@${{ secrets.QA_EC2_IP }} << EOF
+            
+            export AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+            export AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            export AWS_SESSION_TOKEN=${{ secrets.AWS_SESSION_TOKEN }}
+            export AWS_DEFAULT_REGION=${{ secrets.AWS_REGION }}
+            export ECR_REGISTRY=${{ env.ECR_REGISTRY }}
+          
+            export ECR_BACKEND_IMAGE="$ECR_REGISTRY/bookshop-backendlatest"
+            export ECR_FRONTEND_IMAGE="$ECR_REGISTRY/bookshop-frontend:latest"
+          
+            export DB_HOST="${{ secrets.RDS_ENDPOINT }}"
+            export DB_USER="${{ secrets.RDS_USERNAME }}"
+            export DB_PASSWORD="${{ secrets.RDS_PASSWORD }}"
+            export DB_NAME="${{ secrets.RDS_DBNAME }}"
+          
+            aws ecr get-login-password --region \$AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
+            
+            echo "📂 Cloning Source Code Repo..."
+            if [ ! -d "bookshop_source" ]; then
+              git clone https://github.com/ztao-8/DevOps_bookshop.git bookshop_source
+            else
+              cd bookshop_source && git pull && cd ..
+            fi
+
+            cd bookshop_source || exit 1
+
+            if [ ! -f docker-compose-qa.yml ]; then
+              echo "❌ docker-compose-qa.yml not found! Exiting..."
+              exit 1
+            fi
+          
+            docker-compose -f docker-compose-qa.yml pull
+            docker-compose down
+            docker-compose -f docker-compose-qa.yml up -d
+            docker image prune -f
+          EOF
       - name: Remove Images if Test Fails
         if: failure()
         run: |
