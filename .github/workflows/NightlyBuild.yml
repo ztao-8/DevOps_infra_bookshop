@@ -59,7 +59,7 @@ jobs:
         with:
           name: ec2-ip
 
-      - name: 读取 TEMP_IP
+      - name: read TEMP_IP
         run: |
           TEMP_IP=$(cat temp_ip.txt)
           echo "✅ get TEMP_IP: $TEMP_IP"
@@ -101,10 +101,11 @@ jobs:
     steps:
       - name: Checkout repository (fetch the source code)
         uses: actions/checkout@v4
-      - name: Debug TEMP_IP
+      - name: read TEMP_IP
         run: |
-          echo "TEMP_IP from environment: ${{ env.TEMP_IP }}"
-          echo "TEMP_IP from variable: $TEMP_IP"
+          TEMP_IP=$(cat temp_ip.txt)
+          echo "✅ get TEMP_IP: $TEMP_IP"
+          echo "TEMP_IP=$TEMP_IP" >> $GITHUB_ENV
       - name: run Smoke Test
         run: |
           chmod +x scripts/smoke-test.sh
