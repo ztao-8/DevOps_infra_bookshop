@@ -65,6 +65,7 @@ jobs:
             --output text)
 
           echo "TEMP_INSTANCE_ID=$TEMP_INSTANCE_ID" >> $GITHUB_ENV
+          echo "${{ env.TEMP_INSTANCE_ID }}" > instance_id.txt
           aws ec2 wait instance-running --region $AWS_REGION --instance-ids $TEMP_INSTANCE_ID
 
           TEMP_IP=$(aws ec2 describe-instances \
@@ -86,6 +87,13 @@ jobs:
         with:
           name: ec2-ip
           path: temp_ip.txt
+
+      - name: Upload INSTANCE_ID as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ec2-instance-id
+          path: instance_id.txt
+
 
   deploy-source-to-ec2:
     needs: setup-test-ec2
@@ -178,6 +186,24 @@ jobs:
           aws ecr batch-delete-image --repository-name bookshop-frontend --image-ids imageTag=$TIMESTAMP
 
           echo "✅ Cleanup completed: Removed failed images from ECR."
+      - name: Get INSTANCE_ID
+        uses: actions/download-artifact@v4
+        with:
+          name: ec2-instance-id
+
+      - name: Read INSTANCE_ID
+        run: |
+          INSTANCE_ID=$(cat instance_id.txt)
+          echo "✅ INSTANCE_ID: $INSTANCE_ID"
+          echo "INSTANCE_ID=$INSTANCE_ID" >> $GITHUB_ENV
+
       - name: Terminate Temporary EC2 Instance
         run: |
-          aws ec2 terminate-instances --instance-ids ${{ env.INSTANCE_ID }}
+          INSTANCE_ID=${{ env.INSTANCE_ID }}
+          if [ -z "$INSTANCE_ID" ]; then
+            echo "❌ ERROR: No instance ID found. Skipping termination."
+            exit 1
+          fi
+          echo "Terminating EC2 instance: $INSTANCE_ID"
+          aws ec2 terminate-instances --instance-ids $INSTANCE_ID
+      
