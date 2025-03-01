@@ -37,14 +37,14 @@ jobs:
           echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_ENV
 
           # Backend
-          docker tag bookshop_source-backend:latest $ECR_REGISTRY/$ECR_BACKEND:latest
-          docker tag bookshop_source-backend:latest $ECR_REGISTRY/$ECR_BACKEND:$TIMESTAMP
+          docker tag backend_service:latest $ECR_REGISTRY/$ECR_BACKEND:latest
+          docker tag backend_service:latest $ECR_REGISTRY/$ECR_BACKEND:$TIMESTAMP
           docker push $ECR_REGISTRY/$ECR_BACKEND:latest
           docker push $ECR_REGISTRY/$ECR_BACKEND:$TIMESTAMP
 
           # Frontend
-          docker tag bookshop_source-frontend:latest $ECR_REGISTRY/$ECR_FRONTEND:latest
-          docker tag bookshop_source-frontend:latest $ECR_REGISTRY/$ECR_FRONTEND:$TIMESTAMP
+          docker tag frontend_service:latest $ECR_REGISTRY/$ECR_FRONTEND:latest
+          docker tag frontend_service:latest $ECR_REGISTRY/$ECR_FRONTEND:$TIMESTAMP
           docker push $ECR_REGISTRY/$ECR_FRONTEND:latest
           docker push $ECR_REGISTRY/$ECR_FRONTEND:$TIMESTAMP
 
