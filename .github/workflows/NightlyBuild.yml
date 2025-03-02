@@ -290,9 +290,9 @@ jobs:
             --query 'imageIds[?imageTag!=`latest`].[imageTag]' --output text | sort -r | sed -n '2p')
           
           export TIMESTAMP=${{env.TIMESTAMP}}
-          echo "🔍 DEBUG: TIMESTAMP='$TIMESTAMP'"
-          aws ecr batch-delete-image --repository-name bookshop-frontend --image-ids imageTag="$TIMESTAMP"
-          aws ecr batch-delete-image --repository-name bookshop-backend --image-ids imageTag="$TIMESTAMP"
+          echo "🔍 DEBUG: TIMESTAMP=$TIMESTAMP"
+          aws ecr batch-delete-image --repository-name bookshop-frontend --image-ids imageTag=$TIMESTAMP
+          aws ecr batch-delete-image --repository-name bookshop-backend --image-ids imageTag=$TIMESTAMP
           echo "Removing latest tag images..."
           aws ecr batch-delete-image --repository-name bookshop-backend --image-ids imageTag=latest || true
           aws ecr batch-delete-image --repository-name bookshop-frontend --image-ids imageTag=latest || true
