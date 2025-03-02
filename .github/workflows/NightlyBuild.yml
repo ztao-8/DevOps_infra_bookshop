@@ -290,7 +290,7 @@ jobs:
           fi
   
 
-  echo "✅ Cleanup completed."
+          echo "✅ Cleanup completed."
 
       - name: Get INSTANCE_ID
         uses: actions/download-artifact@v4
