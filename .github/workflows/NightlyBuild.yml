@@ -269,8 +269,28 @@ jobs:
           echo "Removing latest tag images..."
           aws ecr batch-delete-image --repository-name bookshop-backend --image-ids imageTag=latest || true
           aws ecr batch-delete-image --repository-name bookshop-frontend --image-ids imageTag=latest || true
+          
+          # 重新获取最新的 timestamp tag
+          NEW_LATEST_BACKEND_TAG=$(echo "$BACKEND_TAGS" | tail -n +2 | head -n 1)  # 获取第二个最新的 tag
+          NEW_LATEST_FRONTEND_TAG=$(echo "$FRONTEND_TAGS" | tail -n +2 | head -n 1)
+          
+          # 重新 tag 为 latest
+          if [ -n "$NEW_LATEST_BACKEND_TAG" ]; then
+          echo "🔄 Tagging backend image $NEW_LATEST_BACKEND_TAG as latest"
+          aws ecr tag-resource --resource-arn "arn:aws:ecr:$AWS_REGION:$AWS_ACCOUNT_ID:repository/bookshop-backend" --tags Key=latest,Value=$NEW_LATEST_BACKEND_TAG || true
+          aws ecr batch-get-image --repository-name bookshop-backend --image-ids imageTag=$NEW_LATEST_BACKEND_TAG --query 'images[].imageManifest' --output text | \
+          aws ecr put-image --repository-name bookshop-backend --image-tag latest --image-manifest - || true
+          fi
+          
+          if [ -n "$NEW_LATEST_FRONTEND_TAG" ]; then
+          echo "🔄 Tagging frontend image $NEW_LATEST_FRONTEND_TAG as latest"
+          aws ecr tag-resource --resource-arn "arn:aws:ecr:$AWS_REGION:$AWS_ACCOUNT_ID:repository/bookshop-frontend" --tags Key=latest,Value=$NEW_LATEST_FRONTEND_TAG || true
+          aws ecr batch-get-image --repository-name bookshop-frontend --image-ids imageTag=$NEW_LATEST_FRONTEND_TAG --query 'images[].imageManifest' --output text | \
+          aws ecr put-image --repository-name bookshop-frontend --image-tag latest --image-manifest - || true
+          fi
+  
 
-          echo "✅ Cleanup completed."
+  echo "✅ Cleanup completed."
 
       - name: Get INSTANCE_ID
         uses: actions/download-artifact@v4
