@@ -226,7 +226,9 @@ jobs:
             aws ecr get-login-password --region $AWS_REGION | sudo docker login --username AWS --password-stdin $ECR_REGISTRY
             
             echo "📂 Resetting and Cloning Source Code Repo..."
-            rm -rf bookshop_source
+            if [ -d "bookshop_source" ]; then
+              sudo rm -rf bookshop_source
+            fi
             git clone https://github.com/ztao-8/DevOps_bookshop.git bookshop_source
             cd bookshop_source || exit 1
 
