@@ -177,13 +177,18 @@ jobs:
             export ECR_FRONTEND_IMAGE="$ECR_REGISTRY/bookshop-frontend:latest"
           
             # 🔄 Ensure variables are properly substituted in docker-compose-test.yml
-            envsubst '${ECR_BACKEND_IMAGE} ${ECR_FRONTEND_IMAGE}' < docker-compose-test.yml > docker-compose-test.yml.tmp
+            envsubst '\$ECR_BACKEND_IMAGE \$ECR_FRONTEND_IMAGE' < docker-compose-test.yml > docker-compose-test.yml.tmp
             mv docker-compose-test.yml.tmp docker-compose-test.yml
-            cat docker-compose-test.yml  # Debugging: Print the updated file
+            cat docker-compose-test.yml 
 
             echo "🚀 Running Docker Compose..."
-            sudo docker-compose -f docker-compose-test.yml down  # Stop old containers
-            sudo docker-compose -f docker-compose-test.yml up -d 
+            sudo ECR_BACKEND_IMAGE="$ECR_REGISTRY/bookshop-backend:latest" \
+                 ECR_FRONTEND_IMAGE="$ECR_REGISTRY/bookshop-frontend:latest" \
+                 docker-compose -f docker-compose-test.yml down  # Stop old containers
+
+            sudo ECR_BACKEND_IMAGE="$ECR_REGISTRY/bookshop-backend:latest" \
+                 ECR_FRONTEND_IMAGE="$ECR_REGISTRY/bookshop-frontend:latest" \
+                 docker-compose -f docker-compose-test.yml up -d 
           EOF
 
       - name: Copy Smoke Test Script to EC2
