@@ -262,6 +262,7 @@ jobs:
           echo "❌ Smoke Test Failed! Removing ECR images..."
           BACKEND_TAGS=$(aws ecr list-images --repository-name bookshop-backend --query 'imageIds[*].imageTag' --output text | grep -E '^[0-9]{8}\.[0-9]{6}$' | sort -r)
           FRONTEND_TAGS=$(aws ecr list-images --repository-name bookshop-frontend --query 'imageIds[*].imageTag' --output text | grep -E '^[0-9]{8}\.[0-9]{6}$' | sort -r)
+        
 
           LATEST_BACKEND_TAG=$(echo "$BACKEND_TAGS" | head -n 1)
           LATEST_FRONTEND_TAG=$(echo "$FRONTEND_TAGS" | head -n 1)
@@ -274,8 +275,8 @@ jobs:
           aws ecr batch-delete-image --repository-name bookshop-frontend --image-ids imageTag=latest || true
           
           # 重新获取最新的 timestamp tag
-          NEW_LATEST_BACKEND_TAG=$(echo "$BACKEND_TAGS" | tail -n +2 | head -n 1)  # 获取第二个最新的 tag
-          NEW_LATEST_FRONTEND_TAG=$(echo "$FRONTEND_TAGS" | tail -n +2 | head -n 1)
+          NEW_LATEST_BACKEND_TAG=$(echo "$BACKEND_TAGS" | tail -n +2 | head -n 2)  
+          NEW_LATEST_FRONTEND_TAG=$(echo "$FRONTEND_TAGS" | tail -n +2 | head -n 2)
           
           # 重新 tag 为 latest
           if [ -n "$NEW_LATEST_BACKEND_TAG" ]; then
