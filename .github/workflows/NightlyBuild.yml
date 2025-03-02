@@ -232,9 +232,9 @@ jobs:
               exit 1
             fi
           
-            docker-compose -f docker-compose-qa.yml pull
-            docker-compose down
-            docker-compose -f docker-compose-qa.yml up -d
+            docker compose -f docker-compose-qa.yml pull
+            docker compose down
+            docker compose -f docker-compose-qa.yml up -d
             docker image prune -f
           EOF
       - name: Remove Images if Test Fails
