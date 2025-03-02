@@ -36,7 +36,7 @@ jobs:
           docker compose build
           TIMESTAMP=$(date "+%Y%m%d.%H%M%S")
           echo "✅ TIMESTAMP: $TIMESTAMP"
-          echo "$TIMESTAMP" > bookshop_source/TIMESTAMP.txt
+          echo "$TIMESTAMP" > TIMESTAMP.txt
           echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_ENV
           
 
