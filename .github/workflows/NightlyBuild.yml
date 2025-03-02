@@ -249,7 +249,7 @@ jobs:
           
             echo "🚀 Pulling and Deploying Docker Containers..."
             sudo docker-compose -f docker-compose-qa.yml pull
-            sudo docker-compose down
+            sudo docker-compose -f docker-compose-qa.yml down
             sudo docker-compose -f docker-compose-qa.yml up -d
             sudo docker image prune -f
           EOF
