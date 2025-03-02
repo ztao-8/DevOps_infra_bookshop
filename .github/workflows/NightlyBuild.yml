@@ -204,16 +204,6 @@ jobs:
         with:
           name: ec2-TIMESTAMP
 
-      - name: Read TIMESTAMP
-        run: |
-          TIMESTAMP=$(cat TIMESTAMP.txt)
-          echo "✅ TIMESTAMP : $TIMESTAMP "
-          echo "TIMESTAMP =$TIMESTAMP" >> $GITHUB_ENV
-          if [ -z "TIMESTAMP" ]; then
-            echo "❌ ERROR: TIMESTAMP is empty. Exiting..."
-            exit 1
-          fi
-
       - name: Copy Smoke Test Script to EC2
         run: |
           scp -o StrictHostKeyChecking=no -i book-key.pem scripts/smoke-test.sh ubuntu@${{ env.TEMP_IP }}:/home/ubuntu/smoke-test.sh
@@ -335,7 +325,8 @@ jobs:
             echo "❌ No previous backend image."
           fi
 
-          echo "✅ Cleanup completed.
+          echo "✅ Cleanup completed."
+
 
       - name: Get INSTANCE_ID
         uses: actions/download-artifact@v4
