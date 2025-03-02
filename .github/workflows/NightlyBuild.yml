@@ -222,14 +222,6 @@ jobs:
             export DB_USER="${{ secrets.RDS_USERNAME }}"
             export DB_PASSWORD="${{ secrets.RDS_PASSWORD }}"
             export DB_NAME="${{ secrets.RDS_DBNAME }}"
-            
-            if ! command -v docker-compose &> /dev/null; then
-              echo "🔧 Installing Docker Compose..."
-              sudo apt update -y
-              sudo apt install -y docker.io docker-compose
-              sudo systemctl start docker
-              sudo systemctl enable docker
-            fi
           
             aws ecr get-login-password --region $AWS_REGION | sudo docker login --username AWS --password-stdin $ECR_REGISTRY
             
@@ -247,21 +239,20 @@ jobs:
               exit 1
             fi
           
+            echo "📝 Replacing Variables in docker-compose-qa.yml Using envsubst..."
+            export ECR_BACKEND_IMAGE="$ECR_REGISTRY/bookshop-backend:latest"
+            export ECR_FRONTEND_IMAGE="$ECR_REGISTRY/bookshop-frontend:latest"
+          
+          
             # 🚀 Export Variables to be used in Docker Compose
             echo "✅ Writing environment variables to .env file"
-            cat <<EOT > .env
-            ECR_BACKEND_IMAGE=$ECR_BACKEND_IMAGE
-            ECR_FRONTEND_IMAGE=$ECR_FRONTEND_IMAGE
-            DB_HOST=$DB_HOST
-            DB_USER=$DB_USER
-            DB_PASSWORD=$DB_PASSWORD
-            DB_NAME=$DB_NAME
-            EOT
+            envsubst < docker-compose-qa.yml > docker-compose-qa.yml.tmp && mv docker-compose-qa.yml.tmp docker-compose-qa.yml
+            cat docker-compose-qa.yml  # Debugging: Print the updated file
           
-            # Pull the latest images from ECR and deploy using Docker Compose
-            sudo --preserve-env=ECR_BACKEND_IMAGE,ECR_FRONTEND_IMAGE,DB_HOST,DB_USER,DB_PASSWORD,DB_NAME docker-compose -f docker-compose-qa.yml pull
-            sudo --preserve-env=ECR_BACKEND_IMAGE,ECR_FRONTEND_IMAGE,DB_HOST,DB_USER,DB_PASSWORD,DB_NAME docker-compose down
-            sudo --preserve-env=ECR_BACKEND_IMAGE,ECR_FRONTEND_IMAGE,DB_HOST,DB_USER,DB_PASSWORD,DB_NAME docker-compose -f docker-compose-qa.yml up -d
+            echo "🚀 Pulling and Deploying Docker Containers..."
+            sudo docker-compose -f docker-compose-qa.yml pull
+            sudo docker-compose down
+            sudo docker-compose -f docker-compose-qa.yml up -d
             sudo docker image prune -f
           EOF
       - name: Remove Images if Test Fails
