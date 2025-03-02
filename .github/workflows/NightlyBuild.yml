@@ -201,6 +201,9 @@ jobs:
             sleep 20
             chmod +x /home/ubuntu/smoke-test.sh
             /home/ubuntu/smoke-test.sh localhost
+            echo "⚠️ Forcing a failure now..."
+            exit 1
+  
           EOF
 
       - name: Deploy to QA EC2
