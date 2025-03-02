@@ -35,10 +35,10 @@ jobs:
           cd bookshop_source  # ✅ Navigate into the source repository directory
           docker compose build
           TIMESTAMP=$(date "+%Y%m%d.%H%M%S")
-          echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_ENV
-          
           echo "✅ TIMESTAMP: $TIMESTAMP"
           echo "$TIMESTAMP" > TIMESTAMP.txt
+          echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_ENV
+          
 
           # Backend
           docker tag backend_service:latest $ECR_REGISTRY/$ECR_BACKEND:latest
@@ -51,7 +51,6 @@ jobs:
           docker tag frontend_service:latest $ECR_REGISTRY/$ECR_FRONTEND:$TIMESTAMP
           docker push $ECR_REGISTRY/$ECR_FRONTEND:latest
           docker push $ECR_REGISTRY/$ECR_FRONTEND:$TIMESTAMP
-          - name: Upload INSTANCE_ID as artifact
 
       - name: Upload TIMESTAMP as artifact
         uses: actions/upload-artifact@v4
