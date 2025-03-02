@@ -36,6 +36,9 @@ jobs:
           docker compose build
           TIMESTAMP=$(date "+%Y%m%d.%H%M%S")
           echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_ENV
+          
+          echo "✅ TIMESTAMP: $TIMESTAMP"
+          echo "$TIMESTAMP" > TIMESTAMP.txt
 
           # Backend
           docker tag backend_service:latest $ECR_REGISTRY/$ECR_BACKEND:latest
@@ -48,6 +51,14 @@ jobs:
           docker tag frontend_service:latest $ECR_REGISTRY/$ECR_FRONTEND:$TIMESTAMP
           docker push $ECR_REGISTRY/$ECR_FRONTEND:latest
           docker push $ECR_REGISTRY/$ECR_FRONTEND:$TIMESTAMP
+          - name: Upload INSTANCE_ID as artifact
+
+      - name: Upload TIMESTAMP as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ec2-TIMESTAMP
+          path: TIMESTAMP.txt
+
 
 
   setup-test-ec2:
@@ -191,6 +202,21 @@ jobs:
                  docker-compose -f docker-compose-test.yml up -d 
           EOF
 
+      - name: Get TIMESTAMP
+        uses: actions/download-artifact@v4
+        with:
+          name: ec2-TIMESTAMP
+
+      - name: Read TIMESTAMP
+        run: |
+          TIMESTAMP =$(cat TIMESTAMP.txt)
+          if [ -z "TIMESTAMP" ]; then
+            echo "❌ ERROR: TIMESTAMP is empty. Exiting..."
+            exit 1
+          fi
+          echo "✅ TIMESTAMP : $TIMESTAMP "
+          echo "TIMESTAMP =$TIMESTAMP" >> $GITHUB_ENV
+
       - name: Copy Smoke Test Script to EC2
         run: |
           scp -o StrictHostKeyChecking=no -i book-key.pem scripts/smoke-test.sh ubuntu@${{ env.TEMP_IP }}:/home/ubuntu/smoke-test.sh
@@ -260,6 +286,7 @@ jobs:
         if: failure()
         run: |
           echo "❌ Smoke Test Failed! Removing ECR images..."
+          
           PRE_FRONTEND_IMAGE_TAG=$(aws ecr list-images --repository-name bookshop-frontend  \
             --query 'imageIds[?imageTag!=`latest`].[imageTag]' --output text | sort -r | sed -n '2p')
           PRE_BACKEND_IMAGE_TAG=$(aws ecr list-images --repository-name bookshop-backend \
