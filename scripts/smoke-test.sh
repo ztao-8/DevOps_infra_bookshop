@@ -36,12 +36,13 @@ echo "📝 Testing POST /books..."
 POST_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X POST -H "Content-Type: application/json" \
 -d '{"title": "Test Book3", "description": "Test Desc", "price": 10.99, "cover": "http://test.com/cover.jpg"}' "$API_URL/books")
 
+POST_RESPONSE= 400
 if [[ "$POST_RESPONSE" -eq 201 ]]; then
   echo "✅ POST /books passed"
 else
   exit_on_failure "POST /books failed (HTTP $POST_RESPONSE)"
 fi
-exit_on_failure
+
 
 echo "✅ Smoke Test Completed Successfully!"
 exit 0
