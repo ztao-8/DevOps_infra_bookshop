@@ -317,7 +317,7 @@ jobs:
             BACKEND_MANIFEST=$(aws ecr batch-get-image --repository-name bookshop-backend --image-ids imageTag="$PRE_BACKEND_IMAGE_TAG" --output text --query 'images[].imageManifest')
 
             if [ -n "$BACKEND_MANIFEST" ]; then
-              aws ecr put-image --repository-name bookshop-backend --image-tag ${{ env.IMAGE_TAG }} --image-manifest "$BACKEND_MANIFEST"
+              aws ecr put-image --repository-name bookshop-backend --image-tag latest --image-manifest "$BACKEND_MANIFEST"
               echo "✅ Successfully tagged"
             else
               echo "❌ Failed"
@@ -327,7 +327,7 @@ jobs:
             echo "❌ No previous backend image."
           fi
 
-          echo "✅ Cleanup completed."
+          echo "✅ Cleanup completed.
 
       - name: Get INSTANCE_ID
         uses: actions/download-artifact@v4
