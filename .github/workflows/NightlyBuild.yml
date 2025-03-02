@@ -230,8 +230,6 @@ jobs:
             git clone https://github.com/ztao-8/DevOps_bookshop.git bookshop_source
             cd bookshop_source || exit 1
 
-            cd bookshop_source || exit 1
-
             if [ ! -f docker-compose-qa.yml ]; then
               echo "❌ docker-compose-qa.yml not found! Exiting..."
               exit 1
