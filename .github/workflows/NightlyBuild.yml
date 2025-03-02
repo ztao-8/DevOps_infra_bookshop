@@ -289,7 +289,13 @@ jobs:
           PRE_BACKEND_IMAGE_TAG=$(aws ecr list-images --repository-name bookshop-backend \
             --query 'imageIds[?imageTag!=`latest`].[imageTag]' --output text | sort -r | sed -n '2p')
           
-          export TIMESTAMP=${{env.TIMESTAMP}}
+          TIMESTAMP=$(cat TIMESTAMP.txt)
+          echo "✅ TIMESTAMP : $TIMESTAMP "
+          echo "TIMESTAMP =$TIMESTAMP" >> $GITHUB_ENV
+          if [ -z "TIMESTAMP" ]; then
+            echo "❌ ERROR: TIMESTAMP is empty. Exiting..."
+            exit 1
+          fi
           echo "🔍 DEBUG: TIMESTAMP=$TIMESTAMP"
           aws ecr batch-delete-image --repository-name bookshop-frontend --image-ids imageTag=$TIMESTAMP
           aws ecr batch-delete-image --repository-name bookshop-backend --image-ids imageTag=$TIMESTAMP
