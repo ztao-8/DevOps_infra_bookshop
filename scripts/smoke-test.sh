@@ -42,5 +42,7 @@ else
   exit_on_failure "POST /books failed (HTTP $POST_RESPONSE)"
 fi
 
+exit_on_failure
+
 echo "✅ Smoke Test Completed Successfully!"
 exit 0
