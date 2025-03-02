@@ -206,7 +206,7 @@ jobs:
 
       - name: Read TIMESTAMP
         run: |
-          TIMESTAMP =$(cat TIMESTAMP.txt)
+          TIMESTAMP=$(cat TIMESTAMP.txt)
           if [ -z "TIMESTAMP" ]; then
             echo "❌ ERROR: TIMESTAMP is empty. Exiting..."
             exit 1
