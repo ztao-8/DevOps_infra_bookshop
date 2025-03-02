@@ -36,7 +36,7 @@ jobs:
           docker compose build
           TIMESTAMP=$(date "+%Y%m%d.%H%M%S")
           echo "✅ TIMESTAMP: $TIMESTAMP"
-          echo "$TIMESTAMP" > TIMESTAMP.txt
+          echo "$TIMESTAMP" > bookshop_source/TIMESTAMP.txt
           echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_ENV
           
 
@@ -56,9 +56,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ec2-TIMESTAMP
-          path: TIMESTAMP.txt
-
-
+          path: bookshop_source/TIMESTAMP.txt
 
   setup-test-ec2:
     needs: build-and-push
