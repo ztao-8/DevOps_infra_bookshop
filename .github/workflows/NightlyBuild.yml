@@ -214,6 +214,15 @@ jobs:
             sleep 20
             chmod +x /home/ubuntu/smoke-test.sh
             /home/ubuntu/smoke-test.sh localhost
+            DATA=$(curl -s http://$EC2_PUBLIC_IP:8800/books)
+            COUNT=$(echo $DATA | jq '. | length')
+            if [ "$COUNT" -eq 3 ]; then
+              echo "✅ Smoke Test - backend & db passed: Correct number of books returned (3 books)."
+            else
+              echo "❌ Smoke Test - backend & db test failed: Incorrect number of books returned."
+              echo "Received data: $DATA"
+              exit 1  # This will fail the workflow if the test does not pass
+            fi
   
           EOF
 
