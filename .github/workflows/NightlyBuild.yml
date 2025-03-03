@@ -167,13 +167,9 @@ jobs:
 
             
             echo "📂 Cloning Source Code Repo..."
-            if [ ! -d "bookshop_source" ]; then
-              git clone https://github.com/ztao-8/DevOps_bookshop.git bookshop_source
-            else
-              cd bookshop_source && git pull && cd ..
-            fi
-
-            cd bookshop_source || exit 1  # ✅ Ensure we are in the correct directory
+            git clone https://github.com/ztao-8/DevOps_bookshop.git bookshop_source
+            cd ..
+            cd bookshop_source || exit 1 
 
             if [ ! -f docker-compose.yml ]; then
               echo "❌ docker-compose.yml not found! Exiting..."
@@ -204,26 +200,7 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i book-key.pem ubuntu@${{ env.TEMP_IP }} << EOF
             sleep 20
             chmod +x /home/ubuntu/smoke-test.sh
-            /home/ubuntu/smoke-test.sh localhost
-            DATA=\$(curl -s http://$TEMP_IP:8800/books | jq -c . 2>/dev/null)
-
-            if [ -z "\$DATA" ]; then
-              echo "❌ Error: No data received from backend"
-              exit 1
-            fi
-      
-            echo "Raw Response: \$DATA"
-            echo "\$DATA" | jq .
-      
-            if [ \$? -ne 0 ]; then
-              echo "❌ Error: Received invalid JSON from backend"
-              echo "Response: \$DATA"
-              exit 1
-            fi
-      
-            COUNT=\$(echo "\$DATA" | jq '. | length')
-            echo "Number of books: \$COUNT"
-  
+            /home/ubuntu/smoke-test.sh ${{ env.TEMP_IP }}
           EOF
 
       - name: Deploy to QA EC2
