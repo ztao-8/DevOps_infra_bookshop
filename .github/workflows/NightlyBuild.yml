@@ -180,15 +180,6 @@ jobs:
               exit 1
             fi
 
-            echo "📝 Updating docker-compose-test.yml..."
-            export ECR_BACKEND_IMAGE="$ECR_REGISTRY/bookshop-backend:latest"
-            export ECR_FRONTEND_IMAGE="$ECR_REGISTRY/bookshop-frontend:latest"
-          
-            # 🔄 Ensure variables are properly substituted in docker-compose-test.yml
-            envsubst '\$ECR_BACKEND_IMAGE \$ECR_FRONTEND_IMAGE' < docker-compose-test.yml > docker-compose-test.yml.tmp
-            mv docker-compose-test.yml.tmp docker-compose-test.yml
-            cat docker-compose-test.yml 
-
             echo "🚀 Running Docker Compose..."
             sudo ECR_BACKEND_IMAGE="$ECR_REGISTRY/bookshop-backend:latest" \
                  ECR_FRONTEND_IMAGE="$ECR_REGISTRY/bookshop-frontend:latest" \
