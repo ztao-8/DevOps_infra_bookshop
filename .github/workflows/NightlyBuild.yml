@@ -200,6 +200,8 @@ jobs:
             sleep 20
             chmod +x /home/ubuntu/smoke-test.sh
             /home/ubuntu/smoke-test.sh ${{ env.TEMP_IP }}
+            echo "❌ Force failed"
+            exit 1
           EOF
 
       - name: Deploy to QA EC2
