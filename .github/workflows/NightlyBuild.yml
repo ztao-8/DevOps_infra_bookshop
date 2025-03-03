@@ -257,11 +257,6 @@ jobs:
         run: |
           echo "❌ Smoke Test Failed! Removing ECR images..."
           
-          FRONTEND_IMAGE_TAG=$(aws ecr list-images --repository-name bookshop-frontend  \
-            --query 'imageIds[?imageTag!=`latest`].[imageTag]' --output text | sort -r | sed -n '2p')
-          BACKEND_IMAGE_TAG=$(aws ecr list-images --repository-name bookshop-backend \
-            --query 'imageIds[?imageTag!=`latest`].[imageTag]' --output text | sort -r | sed -n '2p')
-          
           TIMESTAMP=$(cat TIMESTAMP.txt)
           echo "✅ TIMESTAMP : $TIMESTAMP "
           echo "TIMESTAMP =$TIMESTAMP" >> $GITHUB_ENV
@@ -275,7 +270,13 @@ jobs:
           echo "Removing latest tag images..."
           aws ecr batch-delete-image --repository-name bookshop-backend --image-ids imageTag=latest || true
           aws ecr batch-delete-image --repository-name bookshop-frontend --image-ids imageTag=latest || true
-         
+          
+          FRONTEND_IMAGE_TAG=$(aws ecr list-images --repository-name bookshop-frontend  \
+            --query 'imageIds[?imageTag!=`latest`].[imageTag]' --output text | sort -r | sed -n '1p')
+          BACKEND_IMAGE_TAG=$(aws ecr list-images --repository-name bookshop-backend \
+            --query 'imageIds[?imageTag!=`latest`].[imageTag]' --output text | sort -r | sed -n '1p')
+          
+          
           if [ -n "$FRONTEND_IMAGE_TAG" ]; then
             echo "Tag last one as latest..."
             FRONTEND_MANIFEST=$(aws ecr batch-get-image --repository-name bookshop-frontend --image-ids imageTag="$FRONTEND_IMAGE_TAG" --output text --query 'images[].imageManifest')
