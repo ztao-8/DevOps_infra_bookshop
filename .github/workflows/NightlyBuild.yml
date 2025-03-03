@@ -168,7 +168,6 @@ jobs:
             
             echo "📂 Cloning Source Code Repo..."
             git clone https://github.com/ztao-8/DevOps_bookshop.git bookshop_source
-            cd ..
             cd bookshop_source || exit 1 
 
             if [ ! -f docker-compose.yml ]; then
