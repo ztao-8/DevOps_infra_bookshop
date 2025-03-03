@@ -19,7 +19,6 @@ exit_on_failure() {
   exit 1
 }
 
-# 检查前端是否启动
 echo "Checking Frontend..."
 FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$FRONTEND_URL")
 if [[ "$FRONTEND_STATUS" -eq 200 ]]; then
@@ -28,7 +27,6 @@ else
   exit_on_failure "Frontend is not responding (HTTP $FRONTEND_STATUS)"
 fi
 
-# 检查 API 是否正常启动
 echo "Checking API Server..."
 API_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$API_URL")
 if [[ "$API_STATUS" -eq 200 ]]; then
@@ -37,7 +35,6 @@ else
   exit_on_failure "Server not responding (HTTP $API_STATUS)"
 fi
 
-# 获取所有书籍
 echo "Checking GET /books..."
 DATA=$(curl -s "$API_URL/books")
 
@@ -45,24 +42,17 @@ if [[ -z "$DATA" ]]; then
   exit_on_failure "GET /books failed: No data received"
 fi
 
-# 确保返回的是有效 JSON
 echo "Validating JSON response..."
 echo "$DATA" | jq empty 2>/dev/null
 if [[ $? -ne 0 ]]; then
   exit_on_failure "GET /books failed: Invalid JSON response"
 fi
 
-# 计算 books 数量
 COUNT=$(echo "$DATA" | jq '. | length')
 echo "Number of books: $COUNT"
-
-if ! [[ "$COUNT" =~ ^[0-9]+$ ]]; then
-  exit_on_failure "COUNT is not a number: $COUNT"
-fi
-
 echo "✅ GET /books passed"
 
-# 添加一本书
+# add a new book
 echo "📝 Testing POST /books..."
 POST_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X POST -H "Content-Type: application/json" \
 -d '{"title": "Test Book", "description": "Test Desc", "price": 10.99, "cover": "http://test.com/cover.jpg"}' "$API_URL/books")
@@ -72,6 +62,29 @@ if [[ "$POST_RESPONSE" -eq 201 ]]; then
 else
   exit_on_failure "POST /books failed (HTTP $POST_RESPONSE)"
 fi
+
+#check new book successfully show up
+echo "Checking GET /books..."
+DATA=$(curl -s "$API_URL/books")
+
+if [[ -z "$DATA" ]]; then
+  exit_on_failure "GET /books failed: No data received"
+fi
+
+echo "Validating JSON response..."
+echo "$DATA" | jq empty 2>/dev/null
+if [[ $? -ne 0 ]]; then
+  exit_on_failure "GET /books failed: Invalid JSON response"
+fi
+
+COUNT=$(echo "$DATA" | jq '. | length')
+echo "Number of books: $COUNT"
+if [ "$COUNT" -eq 4 ]; then
+  echo "✅ Integration test passed"
+else
+  exit_on_failure "Integration failed"
+fi
+
 
 echo "✅ Smoke Test Completed Successfully!"
 exit 0
