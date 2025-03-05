@@ -33,11 +33,11 @@ jobs:
       - name: Build and Push Docker Images using Docker Compose
         run: |
           cd bookshop_source  # ✅ Navigate into the source repository directory
-          docker build -t frontend \
+          docker build -t frontend_service:latest \
             --build-arg VITE_API_URL=https://bestziyu.xyz/api \
             -f frontend/Dockerfile ./frontend
           
-          docker build -t backend -f backend/Dockerfile ./backend
+          docker build -t backend_service:latest -f backend/Dockerfile ./backend
           TIMESTAMP=$(date "+%Y%m%d.%H%M%S")
           echo "✅ TIMESTAMP: $TIMESTAMP"
           echo "$TIMESTAMP" > TIMESTAMP.txt
