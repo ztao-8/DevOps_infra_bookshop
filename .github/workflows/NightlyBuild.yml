@@ -207,6 +207,11 @@ jobs:
            
           EOF
 
+      - name: AWS ECR Login
+        run: |
+          aws ecr get-login-password --region $AWS_REGION | \
+          docker login --username AWS --password-stdin $ECR_REGISTRY
+
       - name: Deploy to QA EC2
         if: success()
         run: |
