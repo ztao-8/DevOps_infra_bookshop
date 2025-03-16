@@ -44,10 +44,21 @@ jobs:
           fi
           echo "RELEASE_TAG=${{ github.event.inputs.RELEASE_TAG }}" >> $GITHUB_ENV
           echo "🔹 Using provided release tag: ${{ github.event.inputs.RELEASE_TAG }}"
-      
+
+      - name: Check if RC Tag Already Exists
+        id: check_tag
+        run: |
+          EXISTING_TAG=$(aws ecr list-images --repository-name $ECR_FRONTEND --query 'imageIds[*].imageTag' --output text | grep -w "$RELEASE_TAG" || echo "")
+          if [ -n "$EXISTING_TAG" ]; then
+            echo "✅ Tag $RELEASE_TAG already exists. Skipping promotion."
+            echo "SKIP_PROMOTION=true" >> $GITHUB_ENV
+          else
+            echo "SKIP_PROMOTION=false" >> $GITHUB_ENV
+          fi
       
 
       - name: Promote Latest Image to RC Tag
+        if: env.SKIP_PROMOTION != 'true'
         run: |
           FRONTEND_MANIFEST=$(aws ecr batch-get-image --repository-name $ECR_FRONTEND --image-ids imageTag=latest  --output text --query 'images[].imageManifest')
           if [ -n "$FRONTEND_MANIFEST" ]; then
@@ -68,6 +79,7 @@ jobs:
           fi
 
       - name: Deploy to RC EC2
+        if: env.SKIP_PROMOTION != 'true'
         run: |
           ssh -o StrictHostKeyChecking=no -i book-key.pem ubuntu@${{ env.RC_EC2_IP }} << EOF
             echo "🚀 Deploying RC $RELEASE_TAG..."
