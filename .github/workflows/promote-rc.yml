@@ -35,6 +35,17 @@ jobs:
         run: |
           echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > book-key.pem
           chmod 400 book-key.pem
+          
+      - name: Use Provided Release Tag
+        run: |
+          if [[ -z "${{ github.event.inputs.RELEASE_TAG }}" ]]; then
+            echo "❌ No RELEASE_TAG provided. Exiting..."
+            exit 1
+          fi
+          echo "RELEASE_TAG=${{ github.event.inputs.RELEASE_TAG }}" >> $GITHUB_ENV
+          echo "🔹 Using provided release tag: ${{ github.event.inputs.RELEASE_TAG }}"
+      
+      
 
       - name: Promote Latest Image to RC Tag
         run: |
