@@ -2,7 +2,10 @@ name: Promote RC Image
 
 on:
   workflow_dispatch:
-
+    inputs:
+      RELEASE_TAG:
+        description: "Release Candidate Tag (e.g., rc1)"
+        required: true
 env:
   ECR_REGISTRY: "509585101616.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com"
   ECR_BACKEND: "bookshop-backend"
