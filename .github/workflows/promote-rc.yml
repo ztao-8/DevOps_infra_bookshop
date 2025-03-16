@@ -1,55 +1,68 @@
 name: Promote RC Image
 
 on:
-  workflow_dispatch:
-    inputs:
-      RELEASE_TAG:
-        description: "Release Candidate Tag (e.g., rc1, rc2, etc.)"
-        required: true
+  workflow_run:
+    workflows: ["Release and Tag"] # 当 Semantic Release 触发新版本时，自动执行 Promotion
+    types:
+      - completed
+
+env:
+  AWS_REGION: "us-east-1"
+  ECR_REGISTRY: "509585101616.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com"
+  ECR_BACKEND: "bookshop-backend"
+  ECR_FRONTEND: "bookshop-frontend"
+  RC_EC2_IP: "${{ secrets.RC_EC2_IP }}"
 
 jobs:
   promote-image:
     runs-on: ubuntu-latest
     steps:
+      - name: Extract Release Tag from Source Repo
+        run: |
+          TAG=$(curl -s https://api.github.com/repos/ztao-8/DevOps_bookshop/releases/latest | jq -r .tag_name)
+          echo "🔹 Latest release tag: $TAG"
+          echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
+
       - name: AWS Login
         run: |
-          aws ecr get-login-password --region us-east-1 | \
-          docker login --username AWS --password-stdin 509585101616.dkr.ecr.us-east-1.amazonaws.com
+          aws ecr get-login-password --region $AWS_REGION | \
+          docker login --username AWS --password-stdin $ECR_REGISTRY
 
-      - name: Tag Images with RC Label
+      - name: Promote Latest Image to RC Tag
         run: |
-          echo "🚀 Promoting latest images to RC tag: ${{ github.event.inputs.RELEASE_TAG }}"
-
-          FRONTEND_MANIFEST=$(aws ecr batch-get-image --repository-name bookshop-frontend --image-ids imageTag=latest --query 'images[].imageManifest' --output json | jq -r '.[0]')
-          if [ -z "$FRONTEND_MANIFEST" ]; then
-            echo "❌ No frontend image found!"
+          FRONTEND_MANIFEST=$(aws ecr batch-get-image --repository-name $ECR_FRONTEND --image-ids imageTag=latest --query 'images[].imageManifest' --output text)
+          if [ -n "$FRONTEND_MANIFEST" ]; then
+            aws ecr put-image --repository-name $ECR_FRONTEND --image-tag "$RELEASE_TAG" --image-manifest "$FRONTEND_MANIFEST"
+            echo "✅ Promoted frontend image to $RELEASE_TAG"
+          else
+            echo "❌ Failed to get frontend image manifest!"
             exit 1
           fi
-          aws ecr put-image --repository-name bookshop-frontend --image-tag ${{ github.event.inputs.RELEASE_TAG }} --image-manifest "$FRONTEND_MANIFEST"
 
-          BACKEND_MANIFEST=$(aws ecr batch-get-image --repository-name bookshop-backend --image-ids imageTag=latest --query 'images[].imageManifest' --output json | jq -r '.[0]')
-          if [ -z "$BACKEND_MANIFEST" ]; then
-            echo "❌ No backend image found!"
+          BACKEND_MANIFEST=$(aws ecr batch-get-image --repository-name $ECR_BACKEND --image-ids imageTag=latest --query 'images[].imageManifest' --output text)
+          if [ -n "$BACKEND_MANIFEST" ]; then
+            aws ecr put-image --repository-name $ECR_BACKEND --image-tag "$RELEASE_TAG" --image-manifest "$BACKEND_MANIFEST"
+            echo "✅ Promoted backend image to $RELEASE_TAG"
+          else
+            echo "❌ Failed to get backend image manifest!"
             exit 1
           fi
-          aws ecr put-image --repository-name bookshop-backend --image-tag ${{ github.event.inputs.RELEASE_TAG }} --image-manifest "$BACKEND_MANIFEST"
 
-      - name: SSH into RC EC2 and Deploy
+      - name: Deploy to RC EC2
         run: |
-          echo "🚀 Deploying RC ${{ github.event.inputs.RELEASE_TAG }} to EC2"
+          ssh -o StrictHostKeyChecking=no -i book-key.pem ubuntu@${{ env.RC_EC2_IP }} << EOF
+            echo "🚀 Deploying RC $RELEASE_TAG..."
+          
+            export AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+            export AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            export AWS_SESSION_TOKEN=${{ secrets.AWS_SESSION_TOKEN }}
+            export AWS_DEFAULT_REGION=$AWS_REGION
+            export ECR_REGISTRY=$ECR_REGISTRY
 
-          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > book-key.pem
-          chmod 400 book-key.pem
+            export ECR_BACKEND_IMAGE="$ECR_REGISTRY/$ECR_BACKEND:$RELEASE_TAG"
+            export ECR_FRONTEND_IMAGE="$ECR_REGISTRY/$ECR_FRONTEND:$RELEASE_TAG"
 
-          ssh -o StrictHostKeyChecking=no -i book-key.pem ubuntu@${{ secrets.RC_EC2_IP }} << EOF
-            export ECR_BACKEND_IMAGE="509585101616.dkr.ecr.us-east-1.amazonaws.com/bookshop-backend:${{ github.event.inputs.RELEASE_TAG }}"
-            export ECR_FRONTEND_IMAGE="509585101616.dkr.ecr.us-east-1.amazonaws.com/bookshop-frontend:${{ github.event.inputs.RELEASE_TAG }}"
-
-            cd ~/deploy || exit 1
-            echo "📦 Pulling new RC images..."
             docker-compose -f docker-compose-rc.yml pull
             docker-compose -f docker-compose-rc.yml down
             docker-compose -f docker-compose-rc.yml up -d
-
-            echo "✅ RC environment deployed!"
           EOF
