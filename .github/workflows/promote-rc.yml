@@ -1,0 +1,53 @@
+name: Promote RC Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      RELEASE_TAG:
+        description: "Release Candidate Tag (e.g., rc1)"
+        required: true
+
+env:
+  AWS_REGION: "us-east-1"
+  ECR_REGISTRY: "509585101616.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com"
+  ECR_BACKEND: "bookshop-backend"
+  ECR_FRONTEND: "bookshop-frontend"
+  RC_EC2_IP: "${{ secrets.RC_EC2_IP }}"
+
+jobs:
+  promote-image:
+    runs-on: ubuntu-latest
+    steps:
+      - name: AWS Login
+        run: |
+          aws ecr get-login-password --region $AWS_REGION | \
+          docker login --username AWS --password-stdin $ECR_REGISTRY
+
+      - name: Tag Images with RC Label
+        run: |
+          aws ecr batch-get-image --repository-name $ECR_FRONTEND --image-ids imageTag=latest \
+            --query 'images[].imageManifest' --output text | \
+          xargs -I {} aws ecr put-image --repository-name $ECR_FRONTEND --image-tag ${{ github.event.inputs.RELEASE_TAG }} --image-manifest "{}"
+
+          aws ecr batch-get-image --repository-name $ECR_BACKEND --image-ids imageTag=latest \
+            --query 'images[].imageManifest' --output text | \
+          xargs -I {} aws ecr put-image --repository-name $ECR_BACKEND --image-tag ${{ github.event.inputs.RELEASE_TAG }} --image-manifest "{}"
+
+      - name: SSH into EC2 and Deploy RC
+        run: |
+          ssh -i "book-key.pem" ubuntu@${{ env.RC_EC2_IP }} << EOF
+            echo "Deploying RC ${{ github.event.inputs.RELEASE_TAG }}..."
+          
+            export AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+            export AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            export AWS_SESSION_TOKEN=${{ secrets.AWS_SESSION_TOKEN }}
+            export AWS_DEFAULT_REGION=$AWS_REGION
+            export ECR_REGISTRY=$ECR_REGISTRY
+
+            export ECR_BACKEND_IMAGE="$ECR_REGISTRY/$ECR_BACKEND:${{ github.event.inputs.RELEASE_TAG }}"
+            export ECR_FRONTEND_IMAGE="$ECR_REGISTRY/$ECR_FRONTEND:${{ github.event.inputs.RELEASE_TAG }}"
+
+            docker-compose -f docker-compose-rc.yml pull
+            docker-compose -f docker-compose-rc.yml down
+            docker-compose -f docker-compose-rc.yml up -d
+          EOF
