@@ -38,7 +38,7 @@ jobs:
 
       - name: Promote Latest Image to RC Tag
         run: |
-          FRONTEND_MANIFEST=$(aws ecr batch-get-image --repository-name $ECR_FRONTEND --image-ids imageTag=latest --query 'images[].imageManifest' --output text)
+          FRONTEND_MANIFEST=$(aws ecr batch-get-image --repository-name $ECR_FRONTEND --image-ids imageTag=latest  --output text --query 'images[].imageManifest')
           if [ -n "$FRONTEND_MANIFEST" ]; then
             aws ecr put-image --repository-name $ECR_FRONTEND --image-tag "$RELEASE_TAG" --image-manifest "$FRONTEND_MANIFEST"
             echo "✅ Promoted frontend image to $RELEASE_TAG"
