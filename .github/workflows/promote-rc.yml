@@ -100,7 +100,7 @@ jobs:
             sudo apt install -y git docker.io docker-compose
             sudo systemctl start docker
             sudo systemctl enable docker
-
+            cd deploy
             docker-compose -f docker-compose-rc.yml pull
             docker-compose -f docker-compose-rc.yml down
             docker-compose -f docker-compose-rc.yml up -d
