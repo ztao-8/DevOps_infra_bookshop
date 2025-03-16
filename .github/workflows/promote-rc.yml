@@ -28,6 +28,11 @@ jobs:
           aws ecr get-login-password --region $AWS_REGION | \
           docker login --username AWS --password-stdin $ECR_REGISTRY
 
+      - name: Set up SSH Key
+        run: |
+          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > book-key.pem
+          chmod 400 book-key.pem
+
       - name: Promote Latest Image to RC Tag
         run: |
           FRONTEND_MANIFEST=$(aws ecr batch-get-image --repository-name $ECR_FRONTEND --image-ids imageTag=latest --query 'images[].imageManifest' --output text)
