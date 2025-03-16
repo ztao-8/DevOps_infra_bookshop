@@ -89,6 +89,11 @@ jobs:
             export AWS_SESSION_TOKEN=${{ secrets.AWS_SESSION_TOKEN }}
             export AWS_DEFAULT_REGION=$AWS_REGION
             export ECR_REGISTRY=$ECR_REGISTRY
+          
+            export DB_HOST="${{ secrets.RDS_ENDPOINT }}"
+            export DB_USER="${{ secrets.RDS_USERNAME }}"
+            export DB_PASSWORD="${{ secrets.RDS_PASSWORD }}"
+            export DB_NAME="${{ secrets.RDS_DBNAME }}"
 
             export ECR_BACKEND_IMAGE="$ECR_REGISTRY/$ECR_BACKEND:$RELEASE_TAG"
             export ECR_FRONTEND_IMAGE="$ECR_REGISTRY/$ECR_FRONTEND:$RELEASE_TAG"
