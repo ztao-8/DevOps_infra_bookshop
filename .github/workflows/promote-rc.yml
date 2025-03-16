@@ -92,14 +92,7 @@ jobs:
 
             export ECR_BACKEND_IMAGE="$ECR_REGISTRY/$ECR_BACKEND:$RELEASE_TAG"
             export ECR_FRONTEND_IMAGE="$ECR_REGISTRY/$ECR_FRONTEND:$RELEASE_TAG"
-          
-            echo "🔄 Updating system..."
-            sudo apt update -y && sudo apt upgrade -y
 
-            echo "🔧 Installing Docker..."
-            sudo apt install -y git docker.io docker-compose
-            sudo systemctl start docker
-            sudo systemctl enable docker
             cd deploy
             docker-compose -f docker-compose-rc.yml pull
             docker-compose -f docker-compose-rc.yml down
