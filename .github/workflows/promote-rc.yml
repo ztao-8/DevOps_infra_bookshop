@@ -1,10 +1,7 @@
 name: Promote RC Image
 
 on:
-  workflow_run:
-    workflows: ["Release"] # 当 Semantic Release 触发新版本时，自动执行 Promotion
-    types:
-      - completed
+  workflow_dispatch:
 
 env:
   AWS_REGION: "us-east-1"
