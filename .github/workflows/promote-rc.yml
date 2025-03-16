@@ -78,22 +78,19 @@ jobs:
             exit 1
           fi
 
-      - name: AWS ECR Login
-        run: |
-          aws ecr get-login-password --region $AWS_REGION | \
-          docker login --username AWS --password-stdin $ECR_REGISTRY
-
       - name: Deploy to RC EC2
         if: env.SKIP_PROMOTION != 'true'
         run: |
           ssh -o StrictHostKeyChecking=no -i book-key.pem ubuntu@${{ env.RC_EC2_IP }} << EOF
             echo "🚀 Deploying RC $RELEASE_TAG..."
           
-            export AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
-            export AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
-            export AWS_SESSION_TOKEN=${{ secrets.AWS_SESSION_TOKEN }}
-            export AWS_DEFAULT_REGION=$AWS_REGION
-            export ECR_REGISTRY=$ECR_REGISTRY
+            # 🟢 重新配置 AWS 认证
+            aws configure set aws_access_key_id "${{ secrets.AWS_ACCESS_KEY_ID }}"
+            aws configure set aws_secret_access_key "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+            aws configure set aws_session_token "${{ secrets.AWS_SESSION_TOKEN }}"
+            aws configure set region $AWS_REGION
+            
+            aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
           
             export DB_HOST="${{ secrets.RDS_ENDPOINT }}"
             export DB_USER="${{ secrets.RDS_USERNAME }}"
