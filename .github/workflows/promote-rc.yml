@@ -2,7 +2,7 @@ name: Promote RC Image
 
 on:
   workflow_run:
-    workflows: ["release"] # 当 Semantic Release 触发新版本时，自动执行 Promotion
+    workflows: ["Release"] # 当 Semantic Release 触发新版本时，自动执行 Promotion
     types:
       - completed
 
