@@ -34,7 +34,7 @@ jobs:
         run: |
           cd bookshop_source  # ✅ Navigate into the source repository directory
           docker build -t frontend_service:latest \
-            --build-arg VITE_API_URL=https://bestziyu.xyz/api \
+            --build-arg VITE_API_URL=https://rc.bestziyu.xyz/api \
             -f frontend/Dockerfile ./frontend
           
           docker build -t backend_service:latest -f backend/Dockerfile ./backend
