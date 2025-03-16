@@ -78,6 +78,11 @@ jobs:
             exit 1
           fi
 
+      - name: AWS ECR Login
+        run: |
+          aws ecr get-login-password --region $AWS_REGION | \
+          docker login --username AWS --password-stdin $ECR_REGISTRY
+
       - name: Deploy to RC EC2
         if: env.SKIP_PROMOTION != 'true'
         run: |
